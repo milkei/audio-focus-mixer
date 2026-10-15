@@ -133,11 +133,14 @@ fun MixerScreen() {
                                 val report = controller.restoreTracked()
                                 trackedCount = controller.trackedCount()
                                 reload()
-                                val message = if (report.failedPackages.isEmpty()) {
-                                    "설정 " + report.restored + "개를 복원했어"
-                                } else {
-                                    "복원 " + report.restored + "개, 실패 " +
-                                        report.failedPackages.size + "개"
+                                val message = buildString {
+                                    append("복원 " + report.restored + "개")
+                                    if (report.skippedExternal > 0) {
+                                        append(", 외부 변경 유지 " + report.skippedExternal + "개")
+                                    }
+                                    if (report.failedPackages.isNotEmpty()) {
+                                        append(", 실패 " + report.failedPackages.size + "개")
+                                    }
                                 }
                                 snackbar.showSnackbar(message)
                             } catch (error: Exception) {

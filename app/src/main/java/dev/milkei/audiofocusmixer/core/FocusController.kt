@@ -46,6 +46,7 @@ class FocusController(context: Context) {
 
     suspend fun restoreTracked(): RestoreReport = mutationMutex.withLock {
         var restored = 0
+        var skippedExternal = 0
         val failures = mutableListOf<String>()
         for (pkg in store.trackedPackages()) {
             val target = store.original(pkg)
@@ -55,6 +56,13 @@ class FocusController(context: Context) {
             }
             try {
                 val actual = read(pkg)
+                // An external app changed this value after our toggle.
+                // Don't clobber its new setting during a bulk restore.
+                if (actual != AppOpMode.IGNORE && actual != target) {
+                    store.remove(pkg)
+                    skippedExternal++
+                    continue
+                }
                 if (actual != target) ShizukuClient.writeMode(pkg, target)
                 check(read(pkg) == target) { "복원 상태 검증 실패" }
                 store.remove(pkg)
@@ -63,8 +71,12 @@ class FocusController(context: Context) {
                 failures += pkg
             }
         }
-        RestoreReport(restored, failures)
+        RestoreReport(restored, failures, skippedExternal)
     }
 
-    data class RestoreReport(val restored: Int, val failedPackages: List<String>)
+    data class RestoreReport(
+        val restored: Int,
+        val failedPackages: List<String>,
+        val skippedExternal: Int,
+    )
 }
