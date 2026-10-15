@@ -1,0 +1,69 @@
+# Audio Focus Mixer
+
+**필요한 앱의 오디오 포커스만 간편하게 제어해요.**
+
+[![Android CI](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml/badge.svg)](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+[English](README.md) · **한국어**
+
+Audio Focus Mixer는 [Shizuku](https://github.com/RikkaApps/Shizuku)를 이용해 앱별 `TAKE_AUDIO_FOCUS` 설정을 바꾸는 가벼운 오픈소스 Android 앱이에요. 특정 앱의 믹싱을 켜면 다른 앱의 재생을 방해하지 않고 소리가 함께 나도록 도울 수 있어요.
+
+**오디오 신호를 직접 합성하거나 앱별 볼륨을 조절하는 기능은 아니에요.** 휴대폰의 기본 볼륨 패널과 물리 볼륨 버튼은 그대로 유지해요.
+
+## 주요 기능
+
+- 설치된 앱을 검색해 앱별 믹싱을 켜거나 끌 수 있어요.
+- 저장된 스위치 값이 아니라 **실제 시스템 AppOps 상태**를 확인해요.
+- 변경 전 모드를 저장하고, 이 앱에서 변경한 항목만 복원해요.
+- Shizuku를 활용하므로 루팅 없이 사용할 수 있어요.
+- 접근성 서비스·화면 오버레이·광고·분석 도구·계정·인터넷 권한을 사용하지 않아요.
+- 한국어와 영어를 지원해요. Android 13 이상에서는 시스템 설정의 '앱 언어'에서 별도로 선택할 수도 있어요.
+
+## 요구 사항
+
+Android 8.0(API 26) 이상과 실행 중인 Shizuku가 필요해요. Shizuku는 ADB 또는 무선 디버깅으로 실행하고, 앱 접근 권한을 허용해야 해요. 루팅은 필요하지 않아요.
+
+Sony Xperia 1 VII의 Android 16 환경에서 기능이 확인됐지만, 모든 기기와 앱에서 같은 재생 결과가 보장되지는 않아요.
+
+## 설치와 사용
+
+현재는 Google Play 앱이나 정식 서명 배포본이 아닌 **공개 소스 기반 베타**예요.
+
+1. [Shizuku](https://github.com/RikkaApps/Shizuku)를 설치하고 실행해주세요.
+2. 아래 설명대로 APK를 빌드하거나 [GitHub Actions](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml)에서 테스트용 Debug APK를 받아주세요.
+3. Audio Focus Mixer를 열고 Shizuku 접근 권한을 허용해주세요.
+4. 원하는 앱을 찾아 믹싱을 켠 다음, 해당 앱에서 재생을 다시 시작해주세요.
+5. 스위치를 끄거나 **변경사항 복원**을 눌러 이전 설정으로 되돌릴 수 있어요.
+
+**앱 삭제 전에는 반드시 변경사항을 복원해주세요.** 앱을 삭제해도 시스템 AppOps 설정이 자동으로 원복되지 않을 수 있어요.
+
+**Debug APK 주의:** CI 실행마다 서명 키가 달라질 수 있어요. 다른 실행의 APK로 덮어쓰기가 실패하면 기존 앱을 삭제해야 할 수 있으니, 그전에 변경사항을 복원해주세요. 안정적인 정식 배포를 위해서는 별도의 고정된 서명 키가 필요해요.
+
+## 빌드하기
+
+Android SDK 36과 JDK 17 이상을 준비해주세요. Gradle 9.5 Wrapper가 저장소에 포함되어 있어요.
+
+```powershell
+git clone https://github.com/milkei/audio-focus-mixer.git
+cd audio-focus-mixer
+.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug
+```
+
+APK 경로: `app/build/outputs/apk/debug/app-debug.apk`
+
+## 동작 방식과 한계
+
+Shizuku UserService에서 앱의 `TAKE_AUDIO_FOCUS` AppOps 모드를 `ignore`로 설정하고, 변경 뒤 실제 값을 확인해요. 이전 모드를 저장하므로 복원할 수 있어요. 다른 도구가 그 사이 값을 다르게 바꿨다면 일괄 복원에서 덮어쓰지 않아요.
+
+이 방식은 오디오 스트림을 직접 섞는 기술이 아니라 시스템의 포커스 요청 동작을 조정하는 방식이에요. 일부 플레이어나 제조사에서는 일시정지·소리 줄이기 등이 다르게 동작할 수 있어요.
+
+`QUERY_ALL_PACKAGES` 권한은 기기의 모든 앱을 검색하는 핵심 기능에 사용해요. Google Play에서는 제한되는 권한이므로 현재 구성 그대로는 스토어에 등록하기 어려울 수 있어요. 인터넷 권한과 추적 도구는 없으며, 앱 목록이나 설정을 서버로 보내지 않아요.
+
+자세한 내용은 [개인정보 안내](docs/PRIVACY.ko.md)를 확인해주세요.
+
+## 참여와 라이선스
+
+[기여 안내](CONTRIBUTING.md) · [보안 정책](SECURITY.md) · [서드파티 고지](THIRD_PARTY_NOTICES.md) · [변경 기록](CHANGELOG.md)
+
+Volume++ 제작자 **noel-digital-fan**의 MIT 라이선스 소스를 참고해 제작한 독립 프로젝트예요. Volume++ 또는 Shizuku의 공식 제품이 아니에요. 출처와 라이선스는 [LICENSE](LICENSE) 및 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)에 명시했어요.
