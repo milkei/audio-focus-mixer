@@ -8,7 +8,7 @@ The project is a **minimal audio-focus controller**, not a replacement volume pa
 
 ## Development
 
-- Android SDK 36, JDK 17+, Gradle Wrapper 9.5.0
+- Android SDK 36, JDK 17+, Gradle Wrapper 9.8.1
 - Kotlin + Jetpack Compose / Material 3
 - English strings: `app/src/main/res/values/strings.xml`
 - Korean strings: `app/src/main/res/values-ko/strings.xml`

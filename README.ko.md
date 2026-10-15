@@ -42,7 +42,7 @@ Sony Xperia 1 VII의 Android 16 환경에서 기능이 확인됐지만, 모든 �
 
 ## 빌드하기
 
-Android SDK 36과 JDK 17 이상을 준비해주세요. Gradle 9.5 Wrapper가 저장소에 포함되어 있어요.
+Android SDK 36과 JDK 17 이상을 준비해주세요. Gradle 9.8.1 Wrapper가 저장소에 포함되어 있어요.
 
 ```powershell
 git clone https://github.com/milkei/audio-focus-mixer.git

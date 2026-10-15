@@ -58,7 +58,7 @@ This technique changes **audio focus requests**, not the audio streams themselve
 
 ## Build from source
 
-Install Android SDK 36 and JDK 17+ (CI uses JDK 21). The repository includes the verified Gradle 9.5 wrapper.
+Install Android SDK 36 and JDK 17+ (CI uses JDK 21). The repository includes the verified Gradle 9.8.1 wrapper.
 
 ```powershell
 git clone https://github.com/milkei/audio-focus-mixer.git
