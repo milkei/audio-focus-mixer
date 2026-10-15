@@ -516,10 +516,19 @@ private fun MixerAppRow(
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelSmall,
                 )
-                else -> Text(
-                    stringResource(R.string.mode_current, mode.cli),
-                    style = MaterialTheme.typography.labelSmall,
-                )
+                else -> {
+                    val modeName = when (mode) {
+                        AppOpMode.DEFAULT -> stringResource(R.string.mode_default)
+                        AppOpMode.ALLOW -> stringResource(R.string.mode_allow)
+                        AppOpMode.IGNORE -> stringResource(R.string.mode_ignored)
+                        AppOpMode.DENY -> stringResource(R.string.mode_deny)
+                        AppOpMode.FOREGROUND -> stringResource(R.string.mode_foreground)
+                    }
+                    Text(
+                        stringResource(R.string.mode_current, modeName),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
             }
         }
         if (busy && mode != null) {

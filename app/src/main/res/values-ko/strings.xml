@@ -45,4 +45,8 @@
     <string name="privacy_note">계정·광고·분석·네트워크 접근 없이 작동해요.</string>
     <string name="state_on">%1$s의 믹싱이 켜졌어요</string>
     <string name="state_off">%1$s의 믹싱이 꺼졌어요</string>
+    <string name="mode_default">기본값</string>
+    <string name="mode_allow">허용됨</string>
+    <string name="mode_deny">차단됨</string>
+    <string name="mode_foreground">전경에서만 허용됨</string>
 </resources>

@@ -45,4 +45,8 @@
     <string name="privacy_note">No account, ads, analytics, or network access.</string>
     <string name="state_on">Mixing enabled for %1$s</string>
     <string name="state_off">Mixing disabled for %1$s</string>
+    <string name="mode_default">Default</string>
+    <string name="mode_allow">Allowed</string>
+    <string name="mode_deny">Denied</string>
+    <string name="mode_foreground">Foreground only</string>
 </resources>
