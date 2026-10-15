@@ -62,6 +62,10 @@ Shizuku UserService에서 앱의 `TAKE_AUDIO_FOCUS` AppOps 모드를 `ignore`로
 
 자세한 내용은 [개인정보 안내](docs/PRIVACY.ko.md)를 확인해주세요.
 
+## 성능과 측정
+
+앱 아이콘을 UI 스레드 밖에서 불러오고 **최대 2MiB**만 캐시해요. 화면에 나타난 앱의 AppOps 상태 조회는 **동시에 최대 2개**로 제한하고, 설정 파일 쓰기는 백그라운드 스레드에서 처리해요. 스크롤 중 CPU 부하와 화면 지연을 줄이기 위한 변경이지만, **실기기 CPU·RAM·배터리 절감량은 아직 측정하지 않았어요.** 측정 방법은 [성능 검증 안내](docs/PERFORMANCE.md)에서 확인할 수 있어요.
+
 ## 참여와 라이선스
 
 [기여 안내](CONTRIBUTING.md) · [보안 정책](SECURITY.md) · [서드파티 고지](THIRD_PARTY_NOTICES.md) · [변경 기록](CHANGELOG.md)

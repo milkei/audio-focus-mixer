@@ -79,6 +79,10 @@ There is no `INTERNET` permission, no account, and no tracking SDK. App names, i
 
 **Google Play:** `QUERY_ALL_PACKAGES` is restricted. This project's current manifest is intended for sideload/open-source distribution, **not** a Play Store submission without further policy review.
 
+## Performance
+
+App icons are decoded off the UI thread and cached within a **2 MiB** memory budget. Visible-row AppOps reads are limited to **two concurrent requests**, and settings writes are dispatched off the UI thread. This reduces potential scroll-time CPU bursts and UI-thread stalls; **actual battery, CPU and RAM savings have not yet been measured on a device**. See [Performance and profiling](docs/PERFORMANCE.md) for a reproducible ADB workflow.
+
 ## Contributing & trust
 
 - [Contributing](CONTRIBUTING.md) · [Translation guide](docs/TRANSLATING.md)
