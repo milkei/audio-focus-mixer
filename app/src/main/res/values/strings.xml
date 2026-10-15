@@ -49,4 +49,9 @@
     <string name="mode_allow">Allowed</string>
     <string name="mode_deny">Denied</string>
     <string name="mode_foreground">Foreground only</string>
+    <string name="about_action">About &amp; licenses</string>
+    <string name="about_title">About Audio Focus Mixer</string>
+    <string name="about_body">Audio Focus Mixer is an independent MIT-licensed open-source app. Audio mixing was adapted from Volume++ (© 2026 noel-digital-fan, MIT). It uses Shizuku API (© 2021 RikkaW, MIT). Full notices are available in the project repository.</string>
+    <string name="about_open_source">View source &amp; licenses</string>
+    <string name="about_close">Close</string>
 </resources>

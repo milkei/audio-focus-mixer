@@ -82,6 +82,7 @@ fun MixerScreen() {
     var version by remember { mutableIntStateOf(0) }
     var trackedCount by remember { mutableIntStateOf(controller.trackedCount()) }
     var showRestoreDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
 
     val modes = remember { mutableStateMapOf<String, AppOpMode>() }
@@ -122,6 +123,32 @@ fun MixerScreen() {
                     app.label.contains(query, ignoreCase = true) ||
                     app.packageName.contains(query, ignoreCase = true))
         }
+    }
+
+    if (showAboutDialog) {
+        AlertDialog(
+            onDismissRequest = { showAboutDialog = false },
+            title = { Text(stringResource(R.string.about_title)) },
+            text = { Text(stringResource(R.string.about_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAboutDialog = false
+                    runCatching {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://github.com/milkei/audio-focus-mixer")
+                            )
+                        )
+                    }
+                }) { Text(stringResource(R.string.about_open_source)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAboutDialog = false }) {
+                    Text(stringResource(R.string.about_close))
+                }
+            },
+        )
     }
 
     if (showRestoreDialog) {
@@ -362,10 +389,13 @@ fun MixerScreen() {
             item(key = "privacy") {
                 Text(
                     stringResource(R.string.privacy_note),
-                    modifier = Modifier.padding(top = 24.dp, bottom = 12.dp),
+                    modifier = Modifier.padding(top = 24.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                TextButton(onClick = { showAboutDialog = true }) {
+                    Text(stringResource(R.string.about_action))
+                }
             }
         }
     }
