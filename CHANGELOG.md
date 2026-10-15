@@ -4,6 +4,11 @@ This project follows the general structure of [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+### Maintenance
+- Consolidated compatible Android build-tool and CI-action updates while keeping `compileSdk 36`.
+- Paused API 37-dependent Compose BOM and AndroidX Core updates until a deliberate SDK migration.
+- Grouped weekly Dependabot updates to reduce review noise and coordinated Gradle/AGP upgrades.
+
 ## [0.2.0] — 2026-10-15
 
 ### Added
