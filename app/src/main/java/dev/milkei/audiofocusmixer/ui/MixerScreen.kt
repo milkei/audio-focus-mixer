@@ -503,9 +503,11 @@ private fun MixerAppRow(
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) {
+        // Snapshot into a local value: delegated Compose State cannot be smart-cast.
+        val loadedIcon = icon
+        if (loadedIcon != null) {
             Image(
-                bitmap = icon,
+                bitmap = loadedIcon,
                 contentDescription = null,
                 modifier = Modifier
                     .size(40.dp)
