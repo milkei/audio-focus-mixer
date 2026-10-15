@@ -81,7 +81,7 @@ fun MixerScreen() {
     var query by rememberSaveable { mutableStateOf("") }
     var showSystem by rememberSaveable { mutableStateOf(false) }
     var version by remember { mutableIntStateOf(0) }
-    var trackedCount by remember { mutableIntStateOf(controller.trackedCount()) }
+    var trackedCount by remember { mutableIntStateOf(0) }
     var showRestoreDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
@@ -98,6 +98,7 @@ fun MixerScreen() {
 
     LaunchedEffect(Unit) {
         ShizukuClient.initialize(context.applicationContext)
+        trackedCount = controller.trackedCount()
         try {
             apps = AppRepository.load(context.applicationContext)
         } catch (_: Exception) {

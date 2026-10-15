@@ -18,7 +18,9 @@ class FocusController(context: Context) {
     suspend fun read(packageName: String): AppOpMode =
         ShizukuClient.readMode(packageName)
 
-    fun trackedCount(): Int = store.trackedPackages().size
+    suspend fun trackedCount(): Int = withContext(Dispatchers.IO) {
+        store.trackedPackages().size
+    }
 
     // SharedPreferences.commit() is intentionally synchronous to keep restore data safe.
     // Do not perform that disk I/O, or the associated AppOps IPC, on Compose's UI thread.
