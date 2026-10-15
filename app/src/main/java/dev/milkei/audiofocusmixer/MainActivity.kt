@@ -3,16 +3,18 @@ package dev.milkei.audiofocusmixer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Surface
 import dev.milkei.audiofocusmixer.ui.MixerScreen
+import dev.milkei.audiofocusmixer.ui.theme.AudioFocusMixerTheme
 
-/** Normal activity only: does not intercept hardware volume buttons or draw overlays. */
+/** No custom volume panel, overlays, or accessibility services. */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            AudioFocusMixerTheme {
                 Surface {
                     MixerScreen()
                 }
