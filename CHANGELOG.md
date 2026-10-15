@@ -4,6 +4,8 @@ This project follows the general structure of [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-15
+
 ### Added
 - English and Korean interface, including system per-app language selection on Android 13+.
 - Dynamic Material 3 light/dark appearance, installed app icons, edge-to-edge safe areas.
