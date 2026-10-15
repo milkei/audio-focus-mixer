@@ -25,12 +25,18 @@ import rikka.shizuku.Shizuku
  * validated TAKE_AUDIO_FOCUS AppOps commands, never arbitrary shell execution.
  */
 object ShizukuClient {
+    /** Stable UI-facing failure categories. Resources supply the user language. */
+    enum class Problem {
+        NOT_STARTED, PERMISSION_DENIED, PERMISSION_REQUEST_FAILED,
+        SERVICE_UNAVAILABLE, DISCONNECTED, TIMEOUT, CONNECTION_FAILED,
+    }
+
     data class Status(
         val running: Boolean = false,
         val granted: Boolean = false,
         val connecting: Boolean = false,
         val ready: Boolean = false,
-        val error: String? = null,
+        val error: Problem? = null,
     )
 
     const val SHIZUKU_PACKAGE = "moe.shizuku.privileged.api"
@@ -46,7 +52,7 @@ object ShizukuClient {
     @Volatile private var service: IAppOpsService? = null
     private var binding = false
     private var failed = false
-    private var failure: String? = null
+    private var failure: Problem? = null
     private var timeout: Job? = null
 
     private val onBinder = Shizuku.OnBinderReceivedListener {
@@ -66,9 +72,11 @@ object ShizukuClient {
         }
     }
 
-    private val onPermission = Shizuku.OnRequestPermissionResultListener { requestCode, _ ->
+    private val onPermission = Shizuku.OnRequestPermissionResultListener { requestCode, result ->
         if (requestCode == PERMISSION_REQUEST_CODE) {
             scope.launch {
+                failure = if (result == PackageManager.PERMISSION_GRANTED) null
+                    else Problem.PERMISSION_DENIED
                 failed = false
                 refresh()
             }
@@ -111,10 +119,11 @@ object ShizukuClient {
             service = null
             binding = false
             cancelTimeout()
-            mutableStatus.value = Status(running = true)
+            mutableStatus.value = Status(running = true, error = failure)
             return
         }
 
+        failure = if (failure == Problem.PERMISSION_DENIED) null else failure
         if (service?.asBinder()?.pingBinder() == false) {
             service = null
         }
@@ -133,7 +142,7 @@ object ShizukuClient {
 
     fun requestPermission() {
         if (!status.value.running) {
-            mutableStatus.value = status.value.copy(error = "Shizuku 서비스를 먼저 실행해 줘")
+            mutableStatus.value = status.value.copy(error = Problem.NOT_STARTED)
             return
         }
         if (status.value.granted) {
@@ -142,11 +151,13 @@ object ShizukuClient {
         }
         runCatching {
             if (Shizuku.shouldShowRequestPermissionRationale()) {
-                error("Shizuku 앱에서 권한 거부 상태를 해제해 줘")
+                failure = Problem.PERMISSION_DENIED
+                error("Permission was denied")
             }
             Shizuku.requestPermission(PERMISSION_REQUEST_CODE)
         }.onFailure {
-            mutableStatus.value = status.value.copy(error = it.message ?: "권한 요청 실패")
+            if (failure != Problem.PERMISSION_DENIED) failure = Problem.PERMISSION_REQUEST_FAILED
+            mutableStatus.value = status.value.copy(error = failure)
         }
     }
 
@@ -178,7 +189,7 @@ object ShizukuClient {
                 } else {
                     service = null
                     failed = true
-                    failure = "권한 서비스가 연결되지 않았어"
+                    failure = Problem.SERVICE_UNAVAILABLE
                 }
                 refresh()
             }
@@ -190,7 +201,7 @@ object ShizukuClient {
                 service = null
                 binding = false
                 failed = true
-                failure = "Shizuku 권한 서비스 연결이 끊어졌어"
+                failure = Problem.DISCONNECTED
                 refresh()
             }
         }
@@ -209,14 +220,14 @@ object ShizukuClient {
                 if (binding && service == null) {
                     binding = false
                     failed = true
-                    failure = "Shizuku 서비스 연결 시간이 초과됐어. 다시 시도해 줘."
+                    failure = Problem.TIMEOUT
                     refresh()
                 }
             }
         } catch (exception: Exception) {
             binding = false
             failed = true
-            failure = exception.message ?: "서비스 연결 실패"
+            failure = Problem.CONNECTION_FAILED
         }
     }
 
@@ -234,7 +245,7 @@ object ShizukuClient {
 
     private suspend fun call(block: (IAppOpsService) -> String): String =
         withContext(Dispatchers.IO) {
-            val active = service ?: error("Shizuku 권한 서비스에 연결되지 않았어")
+            val active = service ?: error("Shizuku connection is not ready")
             try {
                 block(active)
             } catch (exception: RemoteException) {
@@ -242,10 +253,10 @@ object ShizukuClient {
                     service = null
                     binding = false
                     failed = true
-                    failure = "Shizuku 서비스가 응답하지 않아"
+                    failure = Problem.DISCONNECTED
                     refresh()
                 }
-                throw IllegalStateException("Shizuku 연결 오류", exception)
+                throw IllegalStateException("Shizuku connection failed", exception)
             }
         }
 }
