@@ -1,48 +1,92 @@
 # Audio Focus Mixer
 
-Android의 오디오 포커스 요청을 앱별로 제어하는 작은 Shizuku 기반 개인용 앱.
+**Audio focus controls for the apps you choose. Nothing more.**
 
-[Volume++](https://github.com/noel-digital-fan/volume_plus_plus)의 **Audio Mixing** 구현을 참고하되, 커스텀 볼륨 패널·접근성 서비스·오버레이·부스터는 포함하지 않는다.
+[![Android CI](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml/badge.svg)](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84)
 
-## 동작
-- 켜기: `appops set <package> TAKE_AUDIO_FOCUS ignore`
-- 끄기: 이 앱이 저장한 **변경 이전 AppOps 모드**로 복원. 이전 상태가 없으면 `default`.
-- 조회: `appops get <package> TAKE_AUDIO_FOCUS`
-- Shizuku UserService(shell UID)에서 실행. 성공 여부를 확인한 후 실제 모드를 재조회한다.
+**English** · [한국어](README.ko.md)
 
-앱별 음량을 직접 제어하거나 오디오 신호를 믹싱하지 않는다. 포커스 요청 동작을 바꾸므로 플레이어/기기/Android 버전에 따라 결과가 달라진다.
+A lightweight, open-source Android app that changes the `TAKE_AUDIO_FOCUS` AppOp for individual apps through [Shizuku](https://github.com/RikkaApps/Shizuku). When you enable mixing for an app, Android may let it play without interrupting another player.
 
-## 기능
-- Shizuku 실행·권한·서비스 연결 진단 및 재시도
-- 설치 앱 검색/시스템 앱 숨기기
-- 스위치에 **실제 시스템 모드** 표시
-- 변경 전 모드 보관 및 이 앱이 변경한 설정만 일괄 복원
-- 한국어 UI, 기존 Android 볼륨 패널 유지
+Audio Focus Mixer is **not** a sound-processing mixer and does **not** offer per-app volume sliders. It leaves your device's original volume panel and hardware buttons untouched.
 
-## 환경 및 빌드
+## Highlights
 
-Android 8.0(API 26)+, [Shizuku](https://github.com/RikkaApps/Shizuku)가 필요하다. 비루팅 기기에서는 Shizuku를 무선 디버깅이나 ADB로 시작하고 이 앱을 승인한다.
+- **One clear control per app** — find installed apps and toggle audio focus requests on or off.
+- **Real system state** — switches reflect the actual AppOps setting, not merely a cached preference.
+- **Safe restore workflow** — record the prior mode before changing it; restore just the changes made through this app.
+- **Root-free option** — runs through Shizuku's authorized shell-UID user service.
+- **Small footprint** — no accessibility service, overlay, advertising, analytics, account, or Internet permission.
+- **English and Korean** — follows system language; Android 13+ also supports per-app language preferences in system settings.
 
-Android Studio에서 Android SDK 36 + JDK 17 이상을 준비한다. Gradle 9.5.0과 Android Gradle Plugin 9.3.0을 사용한다. **Gradle Wrapper 바이너리는 초기 MVP에 아직 추가하지 않았으므로** 로컬 Gradle 9.5.0이 필요하다.
+## Requirements
 
-```powershell
-gradle :app:assembleDebug :app:testDebugUnitTest
+- Android **8.0 (API 26)** or later.
+- Shizuku installed and running via ADB or wireless debugging. **Root is not required.**
+- Shizuku permission granted to Audio Focus Mixer.
+
+Individual Android versions, OEM audio policies, and media apps may react differently. Android 16 on a Sony Xperia 1 VII has been tested by the project owner, but universal device compatibility is **not** guaranteed.
+
+## Install & use
+
+This is currently a **source-first beta**, not a Google Play listing or a signed production release.
+
+1. Install and start [Shizuku](https://github.com/RikkaApps/Shizuku).
+2. Build an APK using the instructions below, or download a **testing-only** debug APK from the [CI run artifacts](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml).
+3. Open Audio Focus Mixer and grant Shizuku access.
+4. Search for the app you want to mix (for example, YouTube). Enable its switch, then restart playback inside that app.
+5. Disable the switch to restore the previous mode, or choose **Restore changes** to restore all changes tracked by this app.
+
+**Before uninstalling:** restore your changes. Android AppOps changes can outlive the app, and uninstalling the app does **not** reliably undo them.
+
+**Debug APK warning:** GitHub Actions debug APKs can be signed with different keys on different runs. Updating one debug APK over another may fail; **restore changes before uninstalling or changing builds**. Stable signed releases are a separate step.
+
+## How it works
+
+The privileged [Shizuku UserService](app/src/main/java/dev/milkei/audiofocusmixer/service/AppOpsUserService.kt) performs only validated `TAKE_AUDIO_FOCUS` operations:
+
+```text
+appops get <package> TAKE_AUDIO_FOCUS
+appops set <package> TAKE_AUDIO_FOCUS ignore
 ```
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions에서도 디버그 APK를 빌드하여 artifact로 업로드한다.
+The app stores the original mode before its first modification, checks command exit status, and reads the mode again after writing. Restoring re-applies the saved mode. If an external tool changed the mode to another value, bulk restore preserves that external change.
 
-## 사용법
-1. Shizuku를 설치·실행하고 앱을 열어 권한을 허용한다.
-2. 앱을 찾아 오디오 믹싱을 켠 뒤 해당 앱의 재생을 다시 시작한다.
-3. 스위치를 끄면 변경 전 모드로 되돌린다.
-4. **앱을 삭제하기 전에는** 이 앱이 변경한 설정을 일괄 복원한다. 앱 삭제만으로 AppOps가 원복되지는 않는다.
+This technique changes **audio focus requests**, not the audio streams themselves. A player may still pause, duck, or behave differently depending on its implementation.
 
-## 한계 및 주의
-- 다른 설정 앱(예: Volume++)도 같은 AppOps를 변경할 수 있으므로 상태는 항상 재조회한다.
-- 이 앱이 켜기 전에 저장하지 않은 외부 설정은 일괄 복원하지 않는다. 켠 후 다른 도구가 다른 모드로 바꾼 항목도 일괄 복원 시 건드리지 않고 제외한다.
-- 일부 플레이어는 포커스 제어 변경 시 재생/일시정지 동작이 불안정할 수 있다.
-- `QUERY_ALL_PACKAGES`를 사용하는 개인 설치용 앱으로, Google Play 배포에는 별도의 정책 검토와 범위 축소가 필요하다.
-- Xperia 1 VII에서 새로운 앱 APK의 실기기 동작은 **아직 검증되지 않았다**.
+## Build from source
 
-## 라이선스
-[noel-digital-fan/volume_plus_plus](https://github.com/noel-digital-fan/volume_plus_plus)의 Shizuku/AppOps 서비스 구조에서 영감을 받아 구현했다. 원저작권 및 MIT 라이선스 고지는 [LICENSE](LICENSE)에 포함되어 있다.
+Install Android SDK 36 and JDK 17+ (CI uses JDK 21). The repository includes the verified Gradle 9.5 wrapper.
+
+```powershell
+git clone https://github.com/milkei/audio-focus-mixer.git
+cd audio-focus-mixer
+.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug
+```
+
+On Linux or macOS use `./gradlew`. Find the APK at `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Permissions & privacy
+
+| Permission | Why it exists |
+| --- | --- |
+| `moe.shizuku.manager.permission.API_V23` | Requests access to Shizuku's privileged user service. |
+| `android.permission.QUERY_ALL_PACKAGES` | Lets you search **any** installed app, not just apps with a launcher icon. |
+
+There is no `INTERNET` permission, no account, and no tracking SDK. App names, installed-package information, and the saved restore modes stay on your device. See [Privacy](docs/PRIVACY.md).
+
+**Google Play:** `QUERY_ALL_PACKAGES` is restricted. This project's current manifest is intended for sideload/open-source distribution, **not** a Play Store submission without further policy review.
+
+## Contributing & trust
+
+- [Contributing](CONTRIBUTING.md) · [Translation guide](docs/TRANSLATING.md)
+- [Security policy](SECURITY.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+- [Changelog](CHANGELOG.md) · [Release checklist](docs/RELEASING.md)
+
+## Attribution & license
+
+Inspired by and adapted from the audio-mixing architecture in [Volume++](https://github.com/noel-digital-fan/volume_plus_plus) by **noel-digital-fan** (MIT). Shizuku APIs are provided by **RikkaW/RikkaApps**. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Audio Focus Mixer is an independent project and is **not affiliated with** Volume++ or Shizuku.
