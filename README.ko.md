@@ -29,10 +29,10 @@ Sony Xperia 1 VII의 Android 16 환경에서 기능이 확인됐지만, 모든 �
 
 ## 설치와 사용
 
-현재는 Google Play 앱이나 정식 서명 배포본이 아닌 **공개 소스 기반 베타**예요.
+**고정 서명 베타 APK 배포:** [Audio Focus Mixer v0.2.0](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0)을 GitHub Releases에서 받아 설치할 수 있어요. Google Play 등록 앱은 아니며, CI Debug APK는 테스트용이에요.
 
 1. [Shizuku](https://github.com/RikkaApps/Shizuku)를 설치하고 실행해주세요.
-2. 아래 설명대로 APK를 빌드하거나 [GitHub Actions](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml)에서 테스트용 Debug APK를 받아주세요.
+2. [v0.2.0 릴리스 페이지](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0)에서 `audio-focus-mixer-v0.2.0.apk`와 `SHA256SUMS`를 받아 확인한 다음 설치해요. 직접 소스에서 빌드할 수도 있지만, [CI Debug APK](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml)는 테스트용이에요.
 3. Audio Focus Mixer를 열고 Shizuku 접근 권한을 허용해주세요.
 4. 원하는 앱을 찾아 믹싱을 켠 다음, 해당 앱에서 재생을 다시 시작해주세요.
 5. 스위치를 끄거나 **변경사항 복원**을 눌러 이전 설정으로 되돌릴 수 있어요.
@@ -43,14 +43,22 @@ Sony Xperia 1 VII의 Android 16 환경에서 기능이 확인됐지만, 모든 �
 
 ### 최초 고정 서명 Release로 전환하기
 
-[서명·배포 후보 체계](docs/RELEASING.md)를 준비했으며, 첫 공식 Release는
-운영 키 준비와 소유자의 별도 승인이 필요해요.
+첫 고정 서명 베타 APK는 `2aadde0426890ab4ae3a9fe9fc788fc856b363bf`
+커밋에서 빌드했고, SHA-256 체크섬과 서명 인증서 지문을 검증했으며
+Xperia 1 VII(Android 16)에서 동작을 확인했어요.
+
+**v0.2.0 무결성:** APK SHA-256
+`328343ac8db9e32cf042e78a814cc3a8cd56f911da6d731f61a1f66deb982d49`;
+서명 인증서 SHA-256
+`C3:1F:F8:09:A7:B0:F9:12:1C:CD:6F:96:A5:DF:D4:5D:AD:FE:C8:08:8E:71:25:59:73:33:17:7C:5E:5C:D6:98`.
+설치 전에 다운로드한 APK와 릴리스의 `SHA256SUMS`가 일치하는지 확인해요.
+[서명·배포 절차](docs/RELEASING.md)도 참고할 수 있어요.
 
 **서명 후보 APK의 공개 범위:** 저장소가 Public이면 GitHub Actions 아티팩트를
 저장소 읽기 권한이 있는 사용자가 다운로드할 수 있어요. 후보 생성은 소유자가
 확인란을 직접 선택한 경우에만 실행해요. 후보 아티팩트는 공식 Release가
 아니며, GitHub Releases 게시에는 별도의 승인이 필요해요. [Windows 키 관리 안내](docs/SIGNING.ko.md)도 참고해주세요.
-승인된 Release가 공개되면 아래 순서로 전환해요.
+이전 **CI Debug APK**에서 첫 고정 서명 Release로 전환한다면 아래 순서를 따라주세요.
 
 1. 기존 Audio Focus Mixer를 실행하고 **변경사항 복원**을 눌러요.
 2. 대상 앱의 **실제 AppOps 모드가 복원됐는지 확인**해요. 불확실하면 기존 앱을

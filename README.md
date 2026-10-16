@@ -32,10 +32,10 @@ Individual Android versions, OEM audio policies, and media apps may react differ
 
 ## Install & use
 
-This is currently a **source-first beta**, not a Google Play listing or a signed production release.
+**Signed beta download:** [Audio Focus Mixer v0.2.0](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0) on GitHub Releases. This is a directly distributed APK, **not** a Google Play listing. Download the published APK and checksum together; GitHub Actions Debug APKs are testing-only.
 
 1. Install and start [Shizuku](https://github.com/RikkaApps/Shizuku).
-2. Build an APK using the instructions below, or download a **testing-only** debug APK from the [CI run artifacts](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml).
+2. Download and install `audio-focus-mixer-v0.2.0.apk` from the [signed v0.2.0 release](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0). You can also build from source, but [CI Debug APKs](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml) are **testing-only**.
 3. Open Audio Focus Mixer and grant Shizuku access.
 4. Search for the app you want to mix (for example, YouTube). Enable its switch, then restart playback inside that app.
 5. Disable the switch to restore the previous mode, or choose **Restore changes** to restore all changes tracked by this app.
@@ -46,14 +46,23 @@ This is currently a **source-first beta**, not a Google Play listing or a signed
 
 ### First fixed-key Release and later updates
 
-The [signed candidate pipeline](docs/RELEASING.md) is prepared; the first official
-Release still requires owner approval and production-key provisioning.
+The first fixed-key signed beta APK was produced from commit
+`2aadde0426890ab4ae3a9fe9fc788fc856b363bf`, independently checked against
+the release checksum and signing certificate, and tested on Xperia 1 VII (Android 16).
+[Release and key-management documentation](docs/RELEASING.md) explains the
+approval-only signing process.
+
+**v0.2.0 integrity:** APK SHA-256
+`328343ac8db9e32cf042e78a814cc3a8cd56f911da6d731f61a1f66deb982d49`;
+signing certificate SHA-256
+`C3:1F:F8:09:A7:B0:F9:12:1C:CD:6F:96:A5:DF:D4:5D:AD:FE:C8:08:8E:71:25:59:73:33:17:7C:5E:5C:D6:98`.
+Verify your downloaded APK against the `SHA256SUMS` release asset before installing.
 
 **Signed candidate visibility:** in a public repository, GitHub Actions artifacts
 are downloadable by people with repository read access. The owner must explicitly
 approve each candidate workflow dispatch with a confirmation checkbox. An Actions
 candidate is **not** an official GitHub Release; publication requires separate approval.
-When an approved fixed-key Release becomes available, migrate in this order:
+If you're moving from an earlier **CI Debug APK** to this fixed-key Release, migrate in this order:
 
 1. Open the existing Audio Focus Mixer and run **Restore changes**.
 2. Confirm the affected apps' actual AppOps modes have been restored. If uncertain,
