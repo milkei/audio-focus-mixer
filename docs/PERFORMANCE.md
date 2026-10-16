@@ -8,8 +8,8 @@ Audio Focus Mixer does not poll in the background. AppOps changes remain in Andr
 | --- | --- | --- |
 | App icon | PackageManager icon loading and bitmap conversion during Compose composition | Deferred background decoding via coroutine, sized to the displayed icon and cached |
 | Icon RAM | No shared bounded bitmap cache | 2 MiB byte-budgeted LRU, entries evicted as needed |
-| Audio-focus reads | Every visible row may simultaneously invoke its own \`appops get\` child process | Two concurrent reads at most, with cancellable waiters and no busy loop |
-| Saved restore mode | Synchronous SharedPreferences \`commit()\` may execute on UI thread | Commit and bulk restore run on \`Dispatchers.IO\` |
+| Audio-focus reads | Every visible row may simultaneously invoke its own `appops get` child process | Two concurrent reads at most, with cancellable waiters and no busy loop |
+| Saved restore mode | Synchronous SharedPreferences `commit()` may execute on UI thread | Commit and bulk restore run on `Dispatchers.IO` |
 | Lazy list reuse | Stable keys only | Stable keys and content types for settings, status, app rows and footer |
 
 ### Tradeoffs
@@ -40,9 +40,9 @@ Capture memory and CPU samples locally with:
 .\scripts\profile-android.ps1 -Label after -Scenario idle
 ~~~
 
-The script writes \`.perf-results/\` (Git-ignored): \`dumpsys meminfo\`, a short \`top\` sampling window, and the process list for the app's foreground and Shizuku user-service processes. These files are local and should **not** be shared publicly without review.
+The script writes `.perf-results/` (Git-ignored): `dumpsys meminfo`, a short `top` sampling window, and the process list for the app's foreground and Shizuku user-service processes. These files are local and should **not** be shared publicly without review.
 
-The package to profile is \`dev.milkei.audiofocusmixer\`. When comparing PSS, inspect the app's **TOTAL PSS** and separately include any related Shizuku user-service process. Process RSS is not equivalent to private RAM. See Google's [dumpsys documentation](https://developer.android.com/tools/dumpsys) and [Android Studio Profiler](https://developer.android.com/studio/profile).
+The package to profile is `dev.milkei.audiofocusmixer`. When comparing PSS, inspect the app's **TOTAL PSS** and separately include any related Shizuku user-service process. Process RSS is not equivalent to private RAM. See Google's [dumpsys documentation](https://developer.android.com/tools/dumpsys) and [Android Studio Profiler](https://developer.android.com/studio/profile).
 
 ### Update/debug APK warning
 
