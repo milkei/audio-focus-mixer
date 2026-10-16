@@ -12,6 +12,6 @@ When adding or changing copy, keep the same string names, positional placeholder
 
 **English style:** Plain, concise language. Don't imply guaranteed simultaneous playback; the feature depends on Android audio-focus policies and player behavior.
 
-Android 13+ users can select English/Korean independently of the device language under Android's per-app language preferences. Earlier Android versions use the device's current language.
+Users can select the app language from the Language button: **Follow system**, **한국어** or **English**. Android 13+ also synchronizes this preference with system per-app language settings. On Android 8–12, AppCompat stores the locale locally via auto-storage.
 
 Before submitting a translation PR, build with `./gradlew :app:assembleDebug` and check narrow screens, long app names, large text, error messages, and confirmation dialogs.

@@ -19,7 +19,8 @@ Audio Focus Mixer is **not** a sound-processing mixer and does **not** offer per
 - **Safe restore workflow** — record the prior mode before changing it; restore just the changes made through this app.
 - **Root-free option** — runs through Shizuku's authorized shell-UID user service.
 - **Small footprint** — no accessibility service, overlay, advertising, analytics, account, or Internet permission.
-- **English and Korean** — follows system language; Android 13+ also supports per-app language preferences in system settings.
+- **English and Korean** — choose **Follow system / 한국어 / English** from the app's Language button. The selection syncs with Android 13+ per-app language settings and is supported on older Android versions too.
+- **Enabled apps first, without jumpy toggles** — apps enabled through this app are grouped at the top after you reopen or explicitly refresh; toggling a switch never moves its row while you're using the list.
 
 ## Requirements
 

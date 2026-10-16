@@ -4,6 +4,10 @@ This project follows the general structure of [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+### UX
+- Prioritize verified in-app-enabled audio-focus apps when the list is reopened or explicitly refreshed; never reorder in response to a toggle or scrolling.
+- Add an in-app system/Korean/English language picker with AndroidX AppCompat backward compatibility to Android 8.0.
+
 ### Performance
 - Decode installed-app icons off the UI thread, size them for display, and cap icon cache memory at 2 MiB.
 - Bound visible-row `TAKE_AUDIO_FOCUS` lookups to two simultaneous Shizuku requests.
