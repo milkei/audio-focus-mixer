@@ -62,6 +62,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import dev.milkei.audiofocusmixer.R
 import dev.milkei.audiofocusmixer.core.AppOpMode
 import dev.milkei.audiofocusmixer.core.FocusController
+import dev.milkei.audiofocusmixer.core.pinnedFirstStable
 import dev.milkei.audiofocusmixer.data.AppIconRepository
 import dev.milkei.audiofocusmixer.data.AppRepository
 import dev.milkei.audiofocusmixer.data.InstalledApp
@@ -84,6 +85,10 @@ fun MixerScreen() {
     var trackedCount by remember { mutableIntStateOf(0) }
     var showRestoreDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    // Stable for this screen session; toggles do not mutate this snapshot.
+    var enabledAtLastSort by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var orderingReady by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
 
     val modes = remember { mutableStateMapOf<String, AppOpMode>() }
@@ -115,16 +120,27 @@ fun MixerScreen() {
     }
 
     LaunchedEffect(status.ready) {
-        if (status.ready) reload()
+        if (status.ready) {
+            if (!orderingReady) {
+                enabledAtLastSort = controller.activeTrackedPackages()
+                orderingReady = true
+            }
+            reload()
+        }
     }
 
-    val shownApps = remember(apps, query, showSystem) {
-        apps.filter { app ->
+    val shownApps = remember(apps, query, showSystem, enabledAtLastSort) {
+        val filtered = apps.filter { app ->
             (showSystem || !app.isSystem) &&
                 (query.isBlank() ||
                     app.label.contains(query, ignoreCase = true) ||
                     app.packageName.contains(query, ignoreCase = true))
         }
+        pinnedFirstStable(filtered, enabledAtLastSort) { it.packageName }
+    }
+
+    if (showLanguageDialog) {
+        LanguagePickerDialog(onDismiss = { showLanguageDialog = false })
     }
 
     if (showAboutDialog) {
@@ -214,11 +230,23 @@ fun MixerScreen() {
         ) {
             item(key = "settings", contentType = "settings") {
                 Column {
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            stringResource(R.string.app_name),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        TextButton(
+                            onClick = { showLanguageDialog = true },
+                            enabled = !restoring && busy.isEmpty(),
+                        ) {
+                            Text(stringResource(R.string.language_button))
+                        }
+                    }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         stringResource(R.string.app_subtitle),
@@ -294,10 +322,22 @@ fun MixerScreen() {
                         )
                         Spacer(Modifier.weight(1f))
                         TextButton(
-                            onClick = { reload() },
-                            enabled = status.ready,
+                            onClick = {
+                                scope.launch {
+                                    // Refresh is a deliberate reordering boundary, not a toggle.
+                                    enabledAtLastSort = controller.activeTrackedPackages()
+                                    reload()
+                                }
+                            },
+                            enabled = status.ready && orderingReady && !restoring && busy.isEmpty(),
                         ) { Text(stringResource(R.string.refresh_states)) }
                     }
+                    Text(
+                        stringResource(R.string.enabled_order_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 10.dp),
+                    )
                     HorizontalDivider()
                 }
             }
@@ -310,7 +350,7 @@ fun MixerScreen() {
                         modifier = Modifier.padding(vertical = 24.dp),
                     )
                 }
-            } else if (loadingApps) {
+            } else if (loadingApps || !orderingReady) {
                 item(key = "loading", contentType = "status") {
                     Row(
                         modifier = Modifier.padding(18.dp),

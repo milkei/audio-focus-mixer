@@ -59,4 +59,5 @@
     <string name="language_system">Follow system</string>
     <string name="language_korean">한국어 (Korean)</string>
     <string name="language_english">English</string>
+    <string name="enabled_order_hint">Apps enabled here move to the top on refresh or reopening. Toggling never moves a row.</string>
 </resources>

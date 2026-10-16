@@ -2,6 +2,7 @@ package dev.milkei.audiofocusmixer.core
 
 import android.content.Context
 import dev.milkei.audiofocusmixer.privileged.ShizukuClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
@@ -20,6 +21,27 @@ class FocusController(context: Context) {
 
     suspend fun trackedCount(): Int = withContext(Dispatchers.IO) {
         store.trackedPackages().size
+    }
+
+    /**
+     * Snapshot only the packages changed here, and verify the current AppOps mode.
+     * No scan of every installed app and no persistent favorite preference.
+     * The UI decides when to apply the snapshot; toggles never reorder a visible list.
+     */
+    suspend fun activeTrackedPackages(): Set<String> = withContext(Dispatchers.IO) {
+        mutationMutex.withLock {
+            buildSet {
+                for (pkg in store.trackedPackages()) {
+                    try {
+                        if (read(pkg) == AppOpMode.IGNORE) add(pkg)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        // The list remains usable if one package has been removed.
+                    }
+                }
+            }
+        }
     }
 
     // SharedPreferences.commit() is intentionally synchronous to keep restore data safe.

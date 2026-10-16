@@ -59,4 +59,5 @@
     <string name="language_system">시스템 기본값</string>
     <string name="language_korean">한국어</string>
     <string name="language_english">English</string>
+    <string name="enabled_order_hint">여기에서 믹싱을 켠 앱은 새로고침하거나 다시 열 때 위로 모여요. 스위치를 누른 직후에는 순서가 바뀌지 않아요.</string>
 </resources>
