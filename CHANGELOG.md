@@ -4,6 +4,8 @@ This project follows the general structure of [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-16 (first signed beta APK)
+
 ### Release infrastructure
 - Add fail-closed PKCS12 Release signing, separate from Debug builds and tests.
 - Add a main-only manual candidate workflow with certificate/package/version checks,
@@ -31,8 +33,6 @@ This project follows the general structure of [Keep a Changelog](https://keepach
 - Consolidated compatible Android build-tool and CI-action updates while keeping `compileSdk 36`.
 - Paused API 37-dependent Compose BOM and AndroidX Core updates until a deliberate SDK migration.
 - Grouped weekly Dependabot updates to reduce review noise and coordinated Gradle/AGP upgrades.
-
-## [0.2.0] — 2026-10-15
 
 ### Added
 - English and Korean interface, including system per-app language selection on Android 13+.
