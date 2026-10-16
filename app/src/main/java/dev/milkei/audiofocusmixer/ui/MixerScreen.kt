@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -76,6 +77,7 @@ fun MixerScreen() {
     val status by ShizukuClient.status.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
     var apps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
     var loadingApps by remember { mutableStateOf(true) }
@@ -89,6 +91,8 @@ fun MixerScreen() {
     // Stable for this screen session; toggles do not mutate this snapshot.
     var enabledAtLastSort by remember { mutableStateOf<Set<String>>(emptySet()) }
     var orderingReady by remember { mutableStateOf(false) }
+    var toggleVersion by remember { mutableIntStateOf(0) }
+    var refreshingOrder by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
 
     val modes = remember { mutableStateMapOf<String, AppOpMode>() }
@@ -120,8 +124,18 @@ fun MixerScreen() {
         if (orderingReady && ShizukuClient.status.value.ready &&
             busy.isEmpty() && !restoring
         ) {
+            val originalToggleVersion = toggleVersion
             scope.launch {
-                enabledAtLastSort = controller.activeTrackedPackages()
+                val nextOrder = controller.activeTrackedPackages()
+                // A resume must never jump a scrolled list or reorder a row just toggled.
+                if (originalToggleVersion == toggleVersion &&
+                    busy.isEmpty() && !restoring && !refreshingOrder &&
+                    !listState.isScrollInProgress &&
+                    listState.firstVisibleItemIndex == 0 &&
+                    listState.firstVisibleItemScrollOffset == 0
+                ) {
+                    enabledAtLastSort = nextOrder
+                }
             }
         }
         reload() // Re-read modes changed by other AppOps clients.
@@ -232,6 +246,7 @@ fun MixerScreen() {
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -333,12 +348,18 @@ fun MixerScreen() {
                         TextButton(
                             onClick = {
                                 scope.launch {
-                                    // Refresh is a deliberate reordering boundary, not a toggle.
-                                    enabledAtLastSort = controller.activeTrackedPackages()
-                                    reload()
+                                    // Explicit refresh is the only in-session reordering action.
+                                    refreshingOrder = true
+                                    try {
+                                        enabledAtLastSort = controller.activeTrackedPackages()
+                                        reload()
+                                    } finally {
+                                        refreshingOrder = false
+                                    }
                                 }
                             },
-                            enabled = status.ready && orderingReady && !restoring && busy.isEmpty(),
+                            enabled = status.ready && orderingReady && !restoring &&
+                                !refreshingOrder && busy.isEmpty(),
                         ) { Text(stringResource(R.string.refresh_states)) }
                     }
                     Text(
@@ -415,10 +436,11 @@ fun MixerScreen() {
                         app = app,
                         mode = mode,
                         hasError = hasError,
-                        busy = isBusy || restoring,
+                        busy = isBusy || restoring || refreshingOrder,
                         onRetry = { reload() },
                         onToggle = { enabled ->
                             if (busy[name] == true || restoring) return@MixerAppRow
+                            toggleVersion++
                             busy[name] = true
                             scope.launch {
                                 try {
