@@ -8,6 +8,8 @@ This project follows the general structure of [Keep a Changelog](https://keepach
 - Add fail-closed PKCS12 Release signing, separate from Debug builds and tests.
 - Add a main-only manual candidate workflow with certificate/package/version checks,
   SHA-256 checksums, restricted temporary key handling and no automatic publication.
+- Require a deliberate candidate-public-access acknowledgement before signing,
+  and document that public-repository Actions artifacts can be downloaded.
 - Add disposable-key signing integration checks without production secrets/artifacts.
 - Document Windows key generation, encrypted backups, Environment provisioning,
   failure recovery and safe Debug-to-Release AppOps restoration.

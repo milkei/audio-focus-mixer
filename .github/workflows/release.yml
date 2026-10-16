@@ -11,6 +11,11 @@ on:
         description: 'Expected versionCode (must exceed docs/release-state.json)'
         required: true
         type: string
+      acknowledge_public_candidate:
+        description: 'I approve a signed APK artifact readable by public repo visitors'
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,7 +26,9 @@ concurrency:
 
 jobs:
   candidate:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'milkei/audio-focus-mixer'
+    # The explicit checkbox is a separate owner authorization to expose a signed
+    # candidate as a downloadable Actions artifact on a public repository.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'milkei/audio-focus-mixer' && inputs.acknowledge_public_candidate == true
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Configure an exact main-only deployment branch policy BEFORE adding secrets.

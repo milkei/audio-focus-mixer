@@ -48,6 +48,11 @@ This is currently a **source-first beta**, not a Google Play listing or a signed
 
 The [signed candidate pipeline](docs/RELEASING.md) is prepared; the first official
 Release still requires owner approval and production-key provisioning.
+
+**Signed candidate visibility:** in a public repository, GitHub Actions artifacts
+are downloadable by people with repository read access. The owner must explicitly
+approve each candidate workflow dispatch with a confirmation checkbox. An Actions
+candidate is **not** an official GitHub Release; publication requires separate approval.
 When an approved fixed-key Release becomes available, migrate in this order:
 
 1. Open the existing Audio Focus Mixer and run **Restore changes**.

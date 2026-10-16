@@ -4,6 +4,33 @@ This process builds **candidates only**. Publishing a GitHub Release, creating a
 merging changes, or changing repository visibility requires separate owner approval.
 The existing Android workflow continues to produce testing-only Debug APKs.
 
+## Public Release candidate policy
+
+**Owner decision:** the verified, fixed-key signed candidate APK may be downloaded
+from a public repository's GitHub Actions artifact area **before** an official
+GitHub Release is published. GitHub's artifact permission is based on repository
+read access; on a public repository, signed-in visitors with read access can
+download the candidate. The files are kept for 14 days, but expiration or
+deletion **cannot retract copies already downloaded**.
+
+Therefore **manually dispatching a candidate is a distribution-level approval**:
+the owner must decide that the exact candidate is safe for third-party download
+before running the workflow. `Release candidate` requires an explicit
+`acknowledge_public_candidate` checkbox (unchecked by default); without it,
+the signing job is skipped. Neither a PR, merge, push nor a new tag creates a
+signed candidate automatically.
+
+Candidate availability is **not** an official release or an endorsement that
+the APK is production-ready. Official version tags and GitHub Releases require
+a **second, separate owner approval** after inspecting the certificate, source
+commit, package/version, checksums and device test results. Do not automatically
+publish an artifact merely because the candidate workflow succeeded.
+
+Do not put private signing material, device diagnostics or undisclosed personal
+data in candidate artifacts. If even candidate APK downloads must be private,
+do **not** dispatch this workflow while the repository is public: use a
+separately approved private distribution design instead.
+
 ## Trust and prerequisites
 
 The current baseline is AGP 9.4.1, Gradle 9.8.1 (distribution SHA-256 pinned in
@@ -148,7 +175,11 @@ ignore verification errors or substitute an unsigned/Debug APK.
 ## Version and candidate workflow
 
 1. Review latest `main` and require green Android and disposable signing checks.
-   Keep application ID, minSdk and the production certificate unchanged.
+   Keep application ID, minSdk and the production certificate unchanged. Before
+   registering signing secrets, enable `main` PR/CI protection where supported
+   and require an exact `main`-only `release` Environment deployment restriction.
+   Do not impose an impossible self-review requirement on a solo maintainer;
+   owner manual approval before dispatch remains mandatory.
 2. For every subsequent release, increase `versionCode` in `app/build.gradle.kts`
    above the last published value and set `versionName` to the intended `X.Y.Z`.
    No version bump is included solely for introducing this pipeline.
@@ -158,8 +189,11 @@ ignore verification errors or substitute an unsigned/Debug APK.
    reviewed main PR **before dispatching the next candidate**. This baseline is
    owner-maintained; the workflow cannot discover an unrecorded external publication.
 4. On **Actions → Release candidate → Run workflow**, select `main`, enter the exact
-   versionName (without `v`) and versionCode, and complete any Environment approval.
-   Treat dispatch authorization as permission to create a candidate only.
+   versionName (without `v`) and versionCode, **explicitly check**
+   `acknowledge_public_candidate`, then complete any Environment approval.
+   The checkbox is a conscious approval to make a signed candidate downloadable
+   to public-repository readers. Leaving it unchecked skips the signing job.
+   This is **not** permission to publish a tagged official GitHub Release.
 5. The workflow checks out the triggering main SHA, validates Wrapper/distribution,
    runs translation/unit checks, restores the PKCS12 to a mode-600 temporary file,
    signs without caches, then deletes the key on shell exit and in `always()` cleanup.
@@ -172,6 +206,8 @@ ignore verification errors or substitute an unsigned/Debug APK.
 7. Download the candidate artifact. Only these files are uploaded (14-day retention):
    `audio-focus-mixer-vX.Y.Z.apk`, `SHA256SUMS`, `release-metadata.json` (public hashes,
    version and source SHA). No keystore, properties, Gradle cache or signing logs.
+   **On a public repository these signed candidates are downloadable by visitors
+   with repository read access even before an official GitHub Release exists.**
 8. Independently check `Get-FileHash -Algorithm SHA256 <APK>` against `SHA256SUMS`
    and run `apksigner verify --verbose --print-certs <APK>` from SDK Build Tools.
    Compare the certificate with the original key and prior published APK.

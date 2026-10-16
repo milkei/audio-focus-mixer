@@ -44,7 +44,12 @@ Sony Xperia 1 VII의 Android 16 환경에서 기능이 확인됐지만, 모든 �
 ### 최초 고정 서명 Release로 전환하기
 
 [서명·배포 후보 체계](docs/RELEASING.md)를 준비했으며, 첫 공식 Release는
-운영 키 준비와 소유자의 별도 승인이 필요해요. [Windows 키 관리 안내](docs/SIGNING.ko.md)도 참고해주세요.
+운영 키 준비와 소유자의 별도 승인이 필요해요.
+
+**서명 후보 APK의 공개 범위:** 저장소가 Public이면 GitHub Actions 아티팩트를
+저장소 읽기 권한이 있는 사용자가 다운로드할 수 있어요. 후보 생성은 소유자가
+확인란을 직접 선택한 경우에만 실행해요. 후보 아티팩트는 공식 Release가
+아니며, GitHub Releases 게시에는 별도의 승인이 필요해요. [Windows 키 관리 안내](docs/SIGNING.ko.md)도 참고해주세요.
 승인된 Release가 공개되면 아래 순서로 전환해요.
 
 1. 기존 Audio Focus Mixer를 실행하고 **변경사항 복원**을 눌러요.

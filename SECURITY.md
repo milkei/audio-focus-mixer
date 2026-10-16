@@ -31,6 +31,10 @@ The manual candidate workflow accepts only this repository's main branch, uses
 pinned action SHAs and read-only contents permission, and requires the `release`
 Environment with an exact main-only server-side branch restriction before secrets
 are provisioned. PR checks have no production secrets or Environment access.
+Candidate signing additionally requires an explicit owner acknowledgement that,
+once the repository is public, the signed APK artifact is downloadable by
+repository readers before official publication. Candidate generation and
+publishing a GitHub Release are separate approval decisions.
 If branch restriction is unavailable, use owner-controlled local signing; do not
 move secrets to repository scope to bypass protection.
 
