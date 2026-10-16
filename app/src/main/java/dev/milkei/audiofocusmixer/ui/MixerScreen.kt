@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -62,6 +63,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import dev.milkei.audiofocusmixer.R
 import dev.milkei.audiofocusmixer.core.AppOpMode
 import dev.milkei.audiofocusmixer.core.FocusController
+import dev.milkei.audiofocusmixer.core.pinnedFirstStable
 import dev.milkei.audiofocusmixer.data.AppIconRepository
 import dev.milkei.audiofocusmixer.data.AppRepository
 import dev.milkei.audiofocusmixer.data.InstalledApp
@@ -75,6 +77,7 @@ fun MixerScreen() {
     val status by ShizukuClient.status.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
     var apps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
     var loadingApps by remember { mutableStateOf(true) }
@@ -84,6 +87,12 @@ fun MixerScreen() {
     var trackedCount by remember { mutableIntStateOf(0) }
     var showRestoreDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    // Stable for this screen session; toggles do not mutate this snapshot.
+    var enabledAtLastSort by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var orderingReady by remember { mutableStateOf(false) }
+    var toggleVersion by remember { mutableIntStateOf(0) }
+    var refreshingOrder by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
 
     val modes = remember { mutableStateMapOf<String, AppOpMode>() }
@@ -110,21 +119,51 @@ fun MixerScreen() {
 
     LifecycleResumeEffect(Unit) {
         ShizukuClient.refresh()
+        // Returning from another app starts a new viewing session.
+        // The initial resume is handled by the ready-state effect below.
+        if (orderingReady && ShizukuClient.status.value.ready &&
+            busy.isEmpty() && !restoring
+        ) {
+            val originalToggleVersion = toggleVersion
+            scope.launch {
+                val nextOrder = controller.activeTrackedPackages()
+                // A resume must never jump a scrolled list or reorder a row just toggled.
+                if (originalToggleVersion == toggleVersion &&
+                    busy.isEmpty() && !restoring && !refreshingOrder &&
+                    !listState.isScrollInProgress &&
+                    listState.firstVisibleItemIndex == 0 &&
+                    listState.firstVisibleItemScrollOffset == 0
+                ) {
+                    enabledAtLastSort = nextOrder
+                }
+            }
+        }
         reload() // Re-read modes changed by other AppOps clients.
         onPauseOrDispose { }
     }
 
     LaunchedEffect(status.ready) {
-        if (status.ready) reload()
+        if (status.ready) {
+            if (!orderingReady) {
+                enabledAtLastSort = controller.activeTrackedPackages()
+                orderingReady = true
+            }
+            reload()
+        }
     }
 
-    val shownApps = remember(apps, query, showSystem) {
-        apps.filter { app ->
+    val shownApps = remember(apps, query, showSystem, enabledAtLastSort) {
+        val filtered = apps.filter { app ->
             (showSystem || !app.isSystem) &&
                 (query.isBlank() ||
                     app.label.contains(query, ignoreCase = true) ||
                     app.packageName.contains(query, ignoreCase = true))
         }
+        pinnedFirstStable(filtered, enabledAtLastSort) { it.packageName }
+    }
+
+    if (showLanguageDialog) {
+        LanguagePickerDialog(onDismiss = { showLanguageDialog = false })
     }
 
     if (showAboutDialog) {
@@ -207,6 +246,7 @@ fun MixerScreen() {
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -214,11 +254,23 @@ fun MixerScreen() {
         ) {
             item(key = "settings", contentType = "settings") {
                 Column {
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            stringResource(R.string.app_name),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        TextButton(
+                            onClick = { showLanguageDialog = true },
+                            enabled = !restoring && busy.isEmpty(),
+                        ) {
+                            Text(stringResource(R.string.language_button))
+                        }
+                    }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         stringResource(R.string.app_subtitle),
@@ -294,10 +346,28 @@ fun MixerScreen() {
                         )
                         Spacer(Modifier.weight(1f))
                         TextButton(
-                            onClick = { reload() },
-                            enabled = status.ready,
+                            onClick = {
+                                scope.launch {
+                                    // Explicit refresh is the only in-session reordering action.
+                                    refreshingOrder = true
+                                    try {
+                                        enabledAtLastSort = controller.activeTrackedPackages()
+                                        reload()
+                                    } finally {
+                                        refreshingOrder = false
+                                    }
+                                }
+                            },
+                            enabled = status.ready && orderingReady && !restoring &&
+                                !refreshingOrder && busy.isEmpty(),
                         ) { Text(stringResource(R.string.refresh_states)) }
                     }
+                    Text(
+                        stringResource(R.string.enabled_order_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 10.dp),
+                    )
                     HorizontalDivider()
                 }
             }
@@ -310,7 +380,7 @@ fun MixerScreen() {
                         modifier = Modifier.padding(vertical = 24.dp),
                     )
                 }
-            } else if (loadingApps) {
+            } else if (loadingApps || !orderingReady) {
                 item(key = "loading", contentType = "status") {
                     Row(
                         modifier = Modifier.padding(18.dp),
@@ -366,10 +436,11 @@ fun MixerScreen() {
                         app = app,
                         mode = mode,
                         hasError = hasError,
-                        busy = isBusy || restoring,
+                        busy = isBusy || restoring || refreshingOrder,
                         onRetry = { reload() },
                         onToggle = { enabled ->
                             if (busy[name] == true || restoring) return@MixerAppRow
+                            toggleVersion++
                             busy[name] = true
                             scope.launch {
                                 try {

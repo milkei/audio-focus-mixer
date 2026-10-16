@@ -54,4 +54,10 @@
     <string name="about_body">Audio Focus Mixer는 독립적인 MIT 라이선스 오픈소스 앱이에요. 믹싱 기능은 Volume++(© 2026 noel-digital-fan, MIT)를 참고했고, Shizuku API(© 2021 RikkaW, MIT)를 사용해요. 전체 출처와 라이선스는 프로젝트 저장소에서 확인할 수 있어요.</string>
     <string name="about_open_source">소스 및 라이선스 보기</string>
     <string name="about_close">닫기</string>
+    <string name="language_button">언어</string>
+    <string name="language_title">앱 언어</string>
+    <string name="language_system">시스템 기본값</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_english">English</string>
+    <string name="enabled_order_hint">여기에서 믹싱을 켠 앱은 새로고침하거나 다시 열 때 위로 모여요. 스위치를 누른 직후에는 순서가 바뀌지 않아요.</string>
 </resources>
