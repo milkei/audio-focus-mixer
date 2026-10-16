@@ -44,6 +44,24 @@ This is currently a **source-first beta**, not a Google Play listing or a signed
 
 **Debug APK warning:** GitHub Actions debug APKs can be signed with different keys on different runs. Updating one debug APK over another may fail; **restore changes before uninstalling or changing builds**. Stable signed releases are a separate step.
 
+### First fixed-key Release and later updates
+
+The [signed candidate pipeline](docs/RELEASING.md) is prepared; the first official
+Release still requires owner approval and production-key provisioning.
+When an approved fixed-key Release becomes available, migrate in this order:
+
+1. Open the existing Audio Focus Mixer and run **Restore changes**.
+2. Confirm the affected apps' actual AppOps modes have been restored. If uncertain,
+   keep the old installation and resolve restoration first; do not reset unknown modes.
+3. Uninstall the old Debug APK (different signing keys may require this).
+4. Install the approved fixed-key Release APK.
+5. Grant Shizuku permission again and reapply desired mixing settings.
+
+Uninstalling loses the app's restore records while system AppOps can remain.
+Subsequent Releases with the same package/signing key and higher versionCode support
+updates in place with app data retained. Check the published APK checksum and
+certificate fingerprint; do not treat a CI Debug APK or candidate as an official release.
+
 ## How it works
 
 The privileged [Shizuku UserService](app/src/main/java/dev/milkei/audiofocusmixer/service/AppOpsUserService.kt) performs only validated `TAKE_AUDIO_FOCUS` operations:
