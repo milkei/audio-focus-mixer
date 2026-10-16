@@ -1,0 +1,39 @@
+name: Signing tests (disposable key)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signing-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    # No Environment, secrets, cache or artifact upload in this workflow.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android SDK
+        run: |
+          test -n "$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@07d1f8453baaff67fb503883367f8b13e6158a54 # v6
+        with:
+          validate-wrappers: true
+          cache-disabled: true
+      - name: Test signing failures, continuity and candidate verification
+        run: python3 -u scripts/test_release_signing.py
+      - name: Clean local build state
+        if: always()
+        run: |
+          find "$RUNNER_TEMP" -maxdepth 1 -type d -name 'afm-test-*' -exec rm -rf -- {} +
+          rm -rf -- app/build .gradle/configuration-cache

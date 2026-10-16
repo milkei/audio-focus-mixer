@@ -1,0 +1,137 @@
+name: Release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Expected versionName (X.Y.Z, without v)'
+        required: true
+        type: string
+      version_code:
+        description: 'Expected versionCode (must exceed docs/release-state.json)'
+        required: true
+        type: string
+      acknowledge_public_candidate:
+        description: 'I approve a signed APK artifact readable by public repo visitors'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    # The explicit checkbox is a separate owner authorization to expose a signed
+    # candidate as a downloadable Actions artifact on a public repository.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'milkei/audio-focus-mixer' && inputs.acknowledge_public_candidate == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Configure an exact main-only deployment branch policy BEFORE adding secrets.
+    environment: release
+    steps:
+      - name: Enforce trusted source
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+        run: test "$EVENT" = workflow_dispatch && test "$REF" = refs/heads/main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android SDK
+        run: |
+          test -n "$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@07d1f8453baaff67fb503883367f8b13e6158a54 # v6
+        with:
+          validate-wrappers: true
+          cache-disabled: true
+      - name: Check translations and unit tests
+        run: |
+          python3 scripts/check_translations.py
+          ./gradlew --no-daemon --no-configuration-cache --no-build-cache :app:testDebugUnitTest
+      - name: Check requested version and public certificate pin
+        env:
+          VERSION: ${{ inputs.version }}
+          CODE: ${{ inputs.version_code }}
+          CERT: ${{ vars.AFM_RELEASE_CERT_SHA256 }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          sys.path.insert(0, 'scripts')
+          from verify_release import check_version, fingerprint
+          state = json.load(open('docs/release-state.json'))
+          check_version(os.environ['VERSION'], int(os.environ['CODE']), state['lastPublishedVersionCode'])
+          fingerprint(os.environ['CERT'])
+          # The owner reconciles the baseline with actual publications before dispatch.
+          print('PASS: requested version and certificate pin format')
+          PY
+      - name: Build signed Release APK
+        env:
+          AFM_RELEASE_KEYSTORE_BASE64: ${{ secrets.AFM_RELEASE_KEYSTORE_BASE64 }}
+          AFM_RELEASE_STORE_PASSWORD: ${{ secrets.AFM_RELEASE_STORE_PASSWORD }}
+          AFM_RELEASE_KEY_ALIAS: ${{ secrets.AFM_RELEASE_KEY_ALIAS }}
+          AFM_RELEASE_KEY_PASSWORD: ${{ secrets.AFM_RELEASE_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          signing_dir=$(mktemp -d "$RUNNER_TEMP/afm-signing.XXXXXX")
+          trap 'rm -rf -- "$signing_dir"' EXIT
+          export AFM_RELEASE_KEYSTORE_PATH="$signing_dir/release.p12"
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          names = ['AFM_RELEASE_KEYSTORE_BASE64', 'AFM_RELEASE_STORE_PASSWORD',
+                   'AFM_RELEASE_KEY_ALIAS', 'AFM_RELEASE_KEY_PASSWORD']
+          if any(not os.environ.get(name) for name in names):
+              raise SystemExit('Missing Release secrets; see docs/RELEASING.md')
+          try:
+              data = base64.b64decode(os.environ['AFM_RELEASE_KEYSTORE_BASE64'], validate=True)
+              if not data:
+                  raise ValueError()
+          except ValueError:
+              raise SystemExit('Invalid keystore Base64; see docs/RELEASING.md') from None
+          path = Path(os.environ['AFM_RELEASE_KEYSTORE_PATH'])
+          path.write_bytes(data)
+          path.chmod(0o600)
+          PY
+          unset AFM_RELEASE_KEYSTORE_BASE64
+          ./gradlew --no-daemon --no-configuration-cache --no-build-cache :app:assembleRelease
+      - name: Verify and package candidate
+        env:
+          VERSION: ${{ inputs.version }}
+          CODE: ${{ inputs.version_code }}
+          CERT: ${{ vars.AFM_RELEASE_CERT_SHA256 }}
+        run: |
+          previous=$(python3 -c 'import json; print(json.load(open("docs/release-state.json"))["lastPublishedVersionCode"])')
+          python3 scripts/verify_release.py \
+            --apk app/build/outputs/apk/release/app-release.apk \
+            --version "$VERSION" --code "$CODE" --previous-code "$previous" \
+            --fingerprint "$CERT" --build-tools "$ANDROID_HOME/build-tools/36.0.0" \
+            --output release-candidate
+      - name: Upload verified candidate (not a published release)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: audio-focus-mixer-v${{ inputs.version }}-${{ github.sha }}
+          path: |
+            release-candidate/*.apk
+            release-candidate/SHA256SUMS
+            release-candidate/release-metadata.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Clean signing material even on failure
+        if: always()
+        shell: bash
+        run: |
+          find "$RUNNER_TEMP" -maxdepth 1 -type d -name 'afm-signing.*' -exec rm -rf -- {} +
+          rm -rf -- .gradle/configuration-cache

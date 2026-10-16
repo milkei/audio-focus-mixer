@@ -4,6 +4,17 @@ This project follows the general structure of [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+### Release infrastructure
+- Add fail-closed PKCS12 Release signing, separate from Debug builds and tests.
+- Add a main-only manual candidate workflow with certificate/package/version checks,
+  SHA-256 checksums, restricted temporary key handling and no automatic publication.
+- Require a deliberate candidate-public-access acknowledgement before signing,
+  and document that public-repository Actions artifacts can be downloaded.
+- Add disposable-key signing integration checks without production secrets/artifacts.
+- Document Windows key generation, encrypted backups, Environment provisioning,
+  failure recovery and safe Debug-to-Release AppOps restoration.
+- Keep app behavior, dependency versions and version 0.2.0 / code 2 unchanged.
+
 ### UX
 - Prioritize verified in-app-enabled audio-focus apps when the list is reopened or explicitly refreshed; never reorder in response to a toggle or scrolling.
 - Add an in-app system/Korean/English language picker with AndroidX AppCompat backward compatibility to Android 8.0.

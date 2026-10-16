@@ -19,3 +19,31 @@ Do not share device identifiers, tokens, private logs, or Shizuku authorization 
 - CI debug APKs use a development signing configuration and are **not production releases**.
 
 No formal security audit has been conducted.
+
+## Release signing and supply chain
+
+The owner generates one production PKCS12 key outside Git and keeps an encrypted
+offline backup. GitHub Environment secrets are automation copies. Never submit
+private keys, keystores, Base64 keystores or passwords in reports or chat.
+Certificate SHA-256 fingerprints and APK checksums are public verification data.
+
+The manual candidate workflow accepts only this repository's main branch, uses
+pinned action SHAs and read-only contents permission, and requires the `release`
+Environment with an exact main-only server-side branch restriction before secrets
+are provisioned. PR checks have no production secrets or Environment access.
+Candidate signing additionally requires an explicit owner acknowledgement that,
+once the repository is public, the signed APK artifact is downloadable by
+repository readers before official publication. Candidate generation and
+publishing a GitHub Release are separate approval decisions.
+If branch restriction is unavailable, use owner-controlled local signing; do not
+move secrets to repository scope to bypass protection.
+
+Missing/incorrect signing inputs fail Release builds. Verified candidates must match
+the owner's public certificate pin, package and expected version. Keys are restored
+only to restricted temporary files, removed on exit/always cleanup, and excluded from
+artifact allowlists and caches. An artifact is not approval to publish. See
+[release/key management and incident recovery](docs/RELEASING.md).
+
+For suspected signing-key exposure, stop signing, revoke automation copies, preserve
+private audit evidence and assess installed-user migration before replacing keys.
+Do not publish compromised material or promise seamless key rotation on Android 8+.

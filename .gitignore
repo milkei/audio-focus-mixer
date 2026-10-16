@@ -27,6 +27,21 @@ render.experimental.xml
 # Keystore files
 *.jks
 *.keystore
+*.p12
+*.pfx
+*.pk8
+*.key
+*.pem
+*.base64
+*.b64
+*.idsig
+keystore.properties
+signing.properties
+.env
+.env.*
+.signing/
+release-candidate/
+__pycache__/
 
 # Google Services (e.g. APIs or Firebase)
 google-services.json
