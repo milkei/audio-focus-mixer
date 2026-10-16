@@ -7,6 +7,7 @@
 - **Installed apps:** The Android `QUERY_ALL_PACKAGES` permission is used to display apps you may want to control. Names, package identifiers, system-app flags, and icons are read locally.
 - **Audio focus modes:** With your Shizuku authorization, the app checks and changes Android's `TAKE_AUDIO_FOCUS` AppOp for selected packages.
 - **Restore records:** Before making a change, the app saves the package identifier and original AppOps mode in private Android app storage. This enables restoration.
+- **Language choice:** On Android 12 and earlier, AndroidX AppCompat saves your selected app language in local app storage. On Android 13 and later, Android stores the per-app locale in system settings. No locale preference is transmitted.
 
 ## Data sharing and storage
 
