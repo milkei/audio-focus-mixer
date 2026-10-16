@@ -9,6 +9,7 @@ import re
 import secrets
 import subprocess
 import tempfile
+import zipfile
 
 from verify_release import check_version, verify
 
@@ -92,6 +93,11 @@ def main():
             gradle(signing)
             verify(APK, version, code, 0, expected, tools)
             print("PASS: Release A signature, certificate, package, SDK and version")
+            tampered = Path(temp) / "tampered.apk"
+            tampered.write_bytes(APK.read_bytes())
+            with zipfile.ZipFile(tampered, "a") as archive:
+                archive.writestr("tamper-test.txt", "modified after signing")
+            rejected(lambda: verify(tampered, version, code, 0, expected, tools), "tampered APK")
             rejected(lambda: verify(APK, version, code, 0, "0" * 64, tools), "different certificate pin")
             rejected(lambda: verify(APK, "99.0.0", code, 0, expected, tools), "incorrect versionName")
             rejected(lambda: check_version(version, code, code), "non-increasing versionCode")
@@ -106,11 +112,26 @@ def main():
             checksum, name = (candidate / "SHA256SUMS").read_text().split()
             assert checksum == hashlib.sha256((candidate / name).read_bytes()).hexdigest()
             print("PASS: candidate allowlist and SHA256SUMS")
+            run(["python3", "scripts/verify_release.py", "--apk", str(APK), "--version", version,
+                 "--code", str(code), "--previous-code", "0", "--fingerprint", expected,
+                 "--build-tools", str(tools), "--output", str(candidate)], base, False, "FileExistsError")
+            print("PASS: existing candidate output cannot be overwritten")
             # Only the disposable checkout is modified, and always restored.
             BUILD.write_text(original.replace(f"versionCode = {code}", f"versionCode = {code + 1}"), encoding="utf-8")
             gradle(signing)
             verify(APK, version, code + 1, code, expected, tools)
             print("PASS: Release B has higher versionCode and identical certificate")
+            other = dict(signing, AFM_RELEASE_KEYSTORE_PATH=str(Path(temp) / "other.p12"))
+            run(["keytool", "-genkeypair", "-storetype", "PKCS12", "-keystore", other[NAMES[0]],
+                 "-alias", "afm-test", "-keyalg", "RSA", "-keysize", "3072", "-validity", "2",
+                 "-dname", "CN=AFM Other Disposable CI Test", "-storepass:env", NAMES[1],
+                 "-keypass:env", NAMES[3]], other)
+            different = Path(temp) / "different-key.apk"
+            signer = tools / ("apksigner.bat" if os.name == "nt" else "apksigner")
+            run([str(signer), "sign", "--ks", other[NAMES[0]], "--ks-key-alias", "afm-test",
+                 "--ks-pass", "env:" + NAMES[1], "--key-pass", "env:" + NAMES[3],
+                 "--out", str(different), str(APK)], other)
+            rejected(lambda: verify(different, version, code + 1, code, expected, tools), "valid APK signed by a different key")
         finally:
             BUILD.write_text(original, encoding="utf-8")
     print("PASS: temporary keys removed; no credentials or APKs uploaded")

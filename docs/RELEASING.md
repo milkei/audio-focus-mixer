@@ -182,7 +182,8 @@ modes), then `adb install -r` a higher-code B signed by the same test key. Verif
 settings and restore records remain. Try higher-code C signed by a different key;
 expect `INSTALL_FAILED_UPDATE_INCOMPATIBLE` and unchanged A/B data. Restore AppOps
 before uninstalling any fixture. Never run this test over a user's real installation.
-The CI integration test verifies A/B certificate continuity and wrong-pin rejection;
+The CI integration test verifies A/B certificate continuity, tamper rejection,
+different-key and wrong-pin rejection, checksums and output overwrite prevention;
 it does not claim actual device installation or data-retention testing.
 
 ## Moving from Debug to the first fixed-key Release

@@ -31,7 +31,9 @@ jobs:
           validate-wrappers: true
           cache-disabled: true
       - name: Test signing failures, continuity and candidate verification
-        run: python3 scripts/test_release_signing.py
+        run: python3 -u scripts/test_release_signing.py
       - name: Clean local build state
         if: always()
-        run: rm -rf -- app/build .gradle/configuration-cache
+        run: |
+          find "$RUNNER_TEMP" -maxdepth 1 -type d -name 'afm-test-*' -exec rm -rf -- {} +
+          rm -rf -- app/build .gradle/configuration-cache
