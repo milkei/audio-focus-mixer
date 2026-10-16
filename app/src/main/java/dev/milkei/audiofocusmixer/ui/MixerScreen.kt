@@ -115,6 +115,15 @@ fun MixerScreen() {
 
     LifecycleResumeEffect(Unit) {
         ShizukuClient.refresh()
+        // Returning from another app starts a new viewing session.
+        // The initial resume is handled by the ready-state effect below.
+        if (orderingReady && ShizukuClient.status.value.ready &&
+            busy.isEmpty() && !restoring
+        ) {
+            scope.launch {
+                enabledAtLastSort = controller.activeTrackedPackages()
+            }
+        }
         reload() // Re-read modes changed by other AppOps clients.
         onPauseOrDispose { }
     }
