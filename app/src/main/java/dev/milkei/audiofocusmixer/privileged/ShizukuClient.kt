@@ -8,6 +8,7 @@ import android.os.IBinder
 import android.os.RemoteException
 import dev.milkei.audiofocusmixer.IAppOpsService
 import dev.milkei.audiofocusmixer.core.AppOpMode
+import dev.milkei.audiofocusmixer.core.ConcurrencyGate
 import dev.milkei.audiofocusmixer.service.AppOpsUserService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +45,8 @@ object ShizukuClient {
     private const val CONNECTION_TIMEOUT_MS = 15_000L
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    // Each read launches an external appops process inside Shizuku. Limit bursts during scroll.
+    private val readGate = ConcurrencyGate(maxParallel = 2)
     private val mutableStatus = MutableStateFlow(Status())
     val status = mutableStatus.asStateFlow()
 
@@ -237,7 +240,9 @@ object ShizukuClient {
     }
 
     suspend fun readMode(packageName: String): AppOpMode =
-        AppOpMode.parseRead(call { it.readMode(packageName) })
+        readGate.withSlot {
+            AppOpMode.parseRead(call { it.readMode(packageName) })
+        }
 
     suspend fun writeMode(packageName: String, mode: AppOpMode) {
         AppOpMode.parseSuccess(call { it.writeMode(packageName, mode.cli) })

@@ -2,6 +2,8 @@ package dev.milkei.audiofocusmixer.core
 
 import android.content.Context
 import dev.milkei.audiofocusmixer.privileged.ShizukuClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -16,62 +18,66 @@ class FocusController(context: Context) {
     suspend fun read(packageName: String): AppOpMode =
         ShizukuClient.readMode(packageName)
 
-    fun trackedCount(): Int = store.trackedPackages().size
+    suspend fun trackedCount(): Int = withContext(Dispatchers.IO) {
+        store.trackedPackages().size
+    }
 
+    // SharedPreferences.commit() is intentionally synchronous to keep restore data safe.
+    // Do not perform that disk I/O, or the associated AppOps IPC, on Compose's UI thread.
     suspend fun setEnabled(packageName: String, enabled: Boolean): AppOpMode =
-        mutationMutex.withLock {
-            val current = read(packageName)
-            val target = if (enabled) AppOpMode.IGNORE
-                else store.original(packageName) ?: AppOpMode.DEFAULT
+        withContext(Dispatchers.IO) {
+            mutationMutex.withLock {
+                val current = read(packageName)
+                val saved = store.original(packageName)
+                val target = if (enabled) AppOpMode.IGNORE
+                    else saved ?: AppOpMode.DEFAULT
 
-            if (enabled && current != AppOpMode.IGNORE && store.original(packageName) == null) {
-                // Commit the backup BEFORE touching Android AppOps.
-                store.record(packageName, current)
+                if (enabled && current != AppOpMode.IGNORE && saved == null) {
+                    store.record(packageName, current)
+                }
+                if (current != target) {
+                    ShizukuClient.writeMode(packageName, target)
+                }
+                val verified = read(packageName)
+                check(verified == target) {
+                    "Audio focus mode did not match the requested value: " + verified.cli
+                }
+                if (!enabled && saved != null) {
+                    store.remove(packageName)
+                }
+                verified
             }
-
-            if (current != target) {
-                ShizukuClient.writeMode(packageName, target)
-            }
-
-            val verified = read(packageName)
-            check(verified == target) {
-                "변경 후 시스템 상태가 예상과 달라: " + verified.cli
-            }
-
-            if (!enabled && store.original(packageName) != null) {
-                store.remove(packageName)
-            }
-            verified
         }
 
-    suspend fun restoreTracked(): RestoreReport = mutationMutex.withLock {
-        var restored = 0
-        var skippedExternal = 0
-        val failures = mutableListOf<String>()
-        for (pkg in store.trackedPackages()) {
-            val target = store.original(pkg)
-            if (target == null) {
-                failures += pkg
-                continue
-            }
-            try {
-                val actual = read(pkg)
-                // An external app changed this value after our toggle.
-                // Don't clobber its new setting during a bulk restore.
-                if (actual != AppOpMode.IGNORE && actual != target) {
-                    store.remove(pkg)
-                    skippedExternal++
+    suspend fun restoreTracked(): RestoreReport = withContext(Dispatchers.IO) {
+        mutationMutex.withLock {
+            var restored = 0
+            var skippedExternal = 0
+            val failures = mutableListOf<String>()
+            for (pkg in store.trackedPackages()) {
+                val target = store.original(pkg)
+                if (target == null) {
+                    failures += pkg
                     continue
                 }
-                if (actual != target) ShizukuClient.writeMode(pkg, target)
-                check(read(pkg) == target) { "복원 상태 검증 실패" }
-                store.remove(pkg)
-                restored++
-            } catch (error: Exception) {
-                failures += pkg
+                try {
+                    val actual = read(pkg)
+                    if (actual != AppOpMode.IGNORE && actual != target) {
+                        // Respect an external change made after this app's toggle.
+                        store.remove(pkg)
+                        skippedExternal++
+                        continue
+                    }
+                    if (actual != target) ShizukuClient.writeMode(pkg, target)
+                    check(read(pkg) == target) { "Restore verification failed" }
+                    store.remove(pkg)
+                    restored++
+                } catch (error: Exception) {
+                    failures += pkg
+                }
             }
+            RestoreReport(restored, failures, skippedExternal)
         }
-        RestoreReport(restored, failures, skippedExternal)
     }
 
     data class RestoreReport(

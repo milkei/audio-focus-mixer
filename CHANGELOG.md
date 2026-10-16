@@ -4,6 +4,14 @@ This project follows the general structure of [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+### Performance
+- Decode installed-app icons off the UI thread, size them for display, and cap icon cache memory at 2 MiB.
+- Bound visible-row `TAKE_AUDIO_FOCUS` lookups to two simultaneous Shizuku requests.
+- Move synchronous restore-mode writes and bulk restore processing to `Dispatchers.IO`.
+- Provide content types for lazy-list composition reuse and add concurrency/cancellation tests.
+- Document device-side CPU and memory profiling; no unmeasured speedup claims.
+
+
 ### Maintenance
 - Consolidated compatible Android build-tool and CI-action updates while keeping `compileSdk 36`.
 - Paused API 37-dependent Compose BOM and AndroidX Core updates until a deliberate SDK migration.

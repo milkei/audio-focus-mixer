@@ -44,12 +44,13 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -57,11 +58,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import dev.milkei.audiofocusmixer.R
 import dev.milkei.audiofocusmixer.core.AppOpMode
 import dev.milkei.audiofocusmixer.core.FocusController
+import dev.milkei.audiofocusmixer.data.AppIconRepository
 import dev.milkei.audiofocusmixer.data.AppRepository
 import dev.milkei.audiofocusmixer.data.InstalledApp
 import dev.milkei.audiofocusmixer.privileged.ShizukuClient
@@ -80,7 +81,7 @@ fun MixerScreen() {
     var query by rememberSaveable { mutableStateOf("") }
     var showSystem by rememberSaveable { mutableStateOf(false) }
     var version by remember { mutableIntStateOf(0) }
-    var trackedCount by remember { mutableIntStateOf(controller.trackedCount()) }
+    var trackedCount by remember { mutableIntStateOf(0) }
     var showRestoreDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
@@ -97,6 +98,7 @@ fun MixerScreen() {
 
     LaunchedEffect(Unit) {
         ShizukuClient.initialize(context.applicationContext)
+        trackedCount = controller.trackedCount()
         try {
             apps = AppRepository.load(context.applicationContext)
         } catch (_: Exception) {
@@ -210,7 +212,7 @@ fun MixerScreen() {
                 .padding(padding),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            item(key = "settings") {
+            item(key = "settings", contentType = "settings") {
                 Column {
                     Text(
                         stringResource(R.string.app_name),
@@ -301,7 +303,7 @@ fun MixerScreen() {
             }
 
             if (!status.ready) {
-                item(key = "connectionHint") {
+                item(key = "connectionHint", contentType = "status") {
                     Text(
                         stringResource(R.string.connection_hint),
                         style = MaterialTheme.typography.bodyMedium,
@@ -309,7 +311,7 @@ fun MixerScreen() {
                     )
                 }
             } else if (loadingApps) {
-                item(key = "loading") {
+                item(key = "loading", contentType = "status") {
                     Row(
                         modifier = Modifier.padding(18.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -322,7 +324,7 @@ fun MixerScreen() {
                     }
                 }
             } else if (shownApps.isEmpty()) {
-                item(key = "empty") {
+                item(key = "empty", contentType = "status") {
                     Text(
                         stringResource(R.string.empty_apps),
                         modifier = Modifier.padding(vertical = 24.dp),
@@ -330,7 +332,11 @@ fun MixerScreen() {
                     )
                 }
             } else {
-                items(shownApps, key = InstalledApp::packageName) { app ->
+                items(
+                    shownApps,
+                    key = InstalledApp::packageName,
+                    contentType = { "app" },
+                ) { app ->
                     val name = app.packageName
                     val mode = modes[name]
                     val hasError = failures[name] == true
@@ -386,7 +392,7 @@ fun MixerScreen() {
                 }
             }
 
-            item(key = "privacy") {
+            item(key = "privacy", contentType = "footer") {
                 Text(
                     stringResource(R.string.privacy_note),
                     modifier = Modifier.padding(top = 24.dp),
@@ -484,11 +490,12 @@ private fun MixerAppRow(
     onToggle: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
-    val icon = remember(app.packageName) {
-        runCatching {
-            context.packageManager.getApplicationIcon(app.packageName)
-                .toBitmap(width = 96, height = 96).asImageBitmap()
-        }.getOrNull()
+    // Icon work is asynchronous; recycled list rows keep a fixed-size placeholder.
+    val icon by produceState<ImageBitmap?>(
+        initialValue = null,
+        key1 = app.packageName,
+    ) {
+        value = AppIconRepository.load(context.applicationContext, app.packageName)
     }
 
     Row(
@@ -497,9 +504,11 @@ private fun MixerAppRow(
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) {
+        // Snapshot into a local value: delegated Compose State cannot be smart-cast.
+        val loadedIcon = icon
+        if (loadedIcon != null) {
             Image(
-                bitmap = icon,
+                bitmap = loadedIcon,
                 contentDescription = null,
                 modifier = Modifier
                     .size(40.dp)
