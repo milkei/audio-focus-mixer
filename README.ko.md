@@ -29,48 +29,19 @@ Sony Xperia 1 VII의 Android 16 환경에서 기능이 확인됐지만, 모든 �
 
 ## 설치와 사용
 
-**고정 서명 베타 APK 배포:** [Audio Focus Mixer v0.2.0](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0)을 GitHub Releases에서 받아 설치할 수 있어요. Google Play 등록 앱은 아니며, CI Debug APK는 테스트용이에요.
+[GitHub Releases — v0.2.0](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0)에서 **고정 서명된 베타 APK**를 받을 수 있어요. Google Play에 등록된 앱은 아니에요.
 
-1. [Shizuku](https://github.com/RikkaApps/Shizuku)를 설치하고 실행해주세요.
-2. [v0.2.0 릴리스 페이지](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0)에서 `audio-focus-mixer-v0.2.0.apk`와 `SHA256SUMS`를 받아 확인한 다음 설치해요. 직접 소스에서 빌드할 수도 있지만, [CI Debug APK](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml)는 테스트용이에요.
-3. Audio Focus Mixer를 열고 Shizuku 접근 권한을 허용해주세요.
-4. 원하는 앱을 찾아 믹싱을 켠 다음, 해당 앱에서 재생을 다시 시작해주세요.
-5. 스위치를 끄거나 **변경사항 복원**을 눌러 이전 설정으로 되돌릴 수 있어요.
+1. [Shizuku](https://github.com/RikkaApps/Shizuku)를 설치하고 실행해요.
+2. [릴리스 페이지](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0)에서 `audio-focus-mixer-v0.2.0.apk`와 `SHA256SUMS`를 받아 APK의 SHA-256이 일치하는지 확인한 뒤 설치해요.
+3. Audio Focus Mixer를 열고 Shizuku 접근 권한을 허용해요.
+4. 원하는 앱의 믹싱을 켜고 해당 앱의 재생을 다시 시작해요.
+5. 스위치를 끄면 해당 앱의 이전 설정을 복원하고, **변경사항 복원**으로 이 앱에서 기록한 변경사항을 한꺼번에 복원할 수 있어요.
 
-**앱 삭제 전에는 반드시 변경사항을 복원해주세요.** 앱을 삭제해도 시스템 AppOps 설정이 자동으로 원복되지 않을 수 있어요.
+**업데이트:** 같은 Release 키로 서명되고 `versionCode`가 높아진 APK는 기존 Release 위에 설치해 앱 데이터와 설정을 유지할 수 있어요. 업데이트 전 릴리스 안내와 SHA-256 체크섬을 확인해 주세요.
 
-**Debug APK 주의:** CI 실행마다 서명 키가 달라질 수 있어요. 다른 실행의 APK로 덮어쓰기가 실패하면 기존 앱을 삭제해야 할 수 있으니, 그전에 변경사항을 복원해주세요. 안정적인 정식 배포를 위해서는 별도의 고정된 서명 키가 필요해요.
+**앱 삭제 전 주의:** 반드시 **변경사항 복원**을 실행하고 실제 AppOps 설정이 돌아왔는지 확인해 주세요. 앱 삭제 후에도 시스템 설정이 남을 수 있지만 복원 기록은 사라져요.
 
-### 최초 고정 서명 Release로 전환하기
-
-첫 고정 서명 베타 APK는 `2aadde0426890ab4ae3a9fe9fc788fc856b363bf`
-커밋에서 빌드했고, SHA-256 체크섬과 서명 인증서 지문을 검증했으며
-Xperia 1 VII(Android 16)에서 동작을 확인했어요.
-
-**v0.2.0 무결성:** APK SHA-256
-`328343ac8db9e32cf042e78a814cc3a8cd56f911da6d731f61a1f66deb982d49`;
-서명 인증서 SHA-256
-`C3:1F:F8:09:A7:B0:F9:12:1C:CD:6F:96:A5:DF:D4:5D:AD:FE:C8:08:8E:71:25:59:73:33:17:7C:5E:5C:D6:98`.
-설치 전에 다운로드한 APK와 릴리스의 `SHA256SUMS`가 일치하는지 확인해요.
-[서명·배포 절차](docs/RELEASING.md)도 참고할 수 있어요.
-
-**서명 후보 APK의 공개 범위:** 저장소가 Public이면 GitHub Actions 아티팩트를
-저장소 읽기 권한이 있는 사용자가 다운로드할 수 있어요. 후보 생성은 소유자가
-확인란을 직접 선택한 경우에만 실행해요. 후보 아티팩트는 공식 Release가
-아니며, GitHub Releases 게시에는 별도의 승인이 필요해요. [Windows 키 관리 안내](docs/SIGNING.ko.md)도 참고해주세요.
-이전 **CI Debug APK**에서 첫 고정 서명 Release로 전환한다면 아래 순서를 따라주세요.
-
-1. 기존 Audio Focus Mixer를 실행하고 **변경사항 복원**을 눌러요.
-2. 대상 앱의 **실제 AppOps 모드가 복원됐는지 확인**해요. 불확실하면 기존 앱을
-   유지한 채 먼저 해결하고, 모르는 이전 모드를 무조건 초기화하지 마세요.
-3. 기존 Debug APK를 제거해요. 서명이 다르면 최초 전환 시 삭제가 필요할 수 있어요.
-4. 승인된 고정 서명 Release APK를 설치해요.
-5. Shizuku 권한을 다시 승인하고 필요한 앱의 믹싱 설정을 재적용해요.
-
-삭제하면 앱의 복원 기록은 사라져도 시스템 AppOps는 남을 수 있어요.
-이후 같은 패키지·Release 키와 더 높은 versionCode의 버전끼리는 앱 데이터를
-유지하며 업데이트할 수 있어요. 공개된 APK 체크섬과 인증서 fingerprint를 확인하고,
-CI Debug APK나 배포 후보를 공식 Release로 취급하지 마세요.
+**예전 CI Debug APK를 사용 중인가요?** 서명이 달라 Release로 전환할 때 기존 앱 삭제가 필요할 수 있어요. 먼저 AppOps를 복원·확인하고, 필요한 경우 Debug 앱을 제거해 주세요. 자세한 내용은 [기존 Debug 앱 전환 안내](docs/RELEASING.md#moving-from-debug-to-the-first-fixed-key-release)를 참고해 주세요. CI Debug APK와 Actions 후보 APK는 공식 배포본이 아니에요.
 
 ## 빌드하기
 

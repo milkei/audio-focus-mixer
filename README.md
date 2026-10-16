@@ -32,49 +32,19 @@ Individual Android versions, OEM audio policies, and media apps may react differ
 
 ## Install & use
 
-**Signed beta download:** [Audio Focus Mixer v0.2.0](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0) on GitHub Releases. This is a directly distributed APK, **not** a Google Play listing. Download the published APK and checksum together; GitHub Actions Debug APKs are testing-only.
+Download the **signed beta APK** from [GitHub Releases — v0.2.0](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0). This app is distributed directly through GitHub, not Google Play.
 
 1. Install and start [Shizuku](https://github.com/RikkaApps/Shizuku).
-2. Download and install `audio-focus-mixer-v0.2.0.apk` from the [signed v0.2.0 release](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0). You can also build from source, but [CI Debug APKs](https://github.com/milkei/audio-focus-mixer/actions/workflows/android.yml) are **testing-only**.
+2. Download `audio-focus-mixer-v0.2.0.apk` and `SHA256SUMS` from the [release page](https://github.com/milkei/audio-focus-mixer/releases/tag/v0.2.0). Verify the APK's SHA-256 against the checksum file, then install it.
 3. Open Audio Focus Mixer and grant Shizuku access.
-4. Search for the app you want to mix (for example, YouTube). Enable its switch, then restart playback inside that app.
-5. Disable the switch to restore the previous mode, or choose **Restore changes** to restore all changes tracked by this app.
+4. Find an app, enable mixing, and restart playback in that app.
+5. Disable mixing for an app to restore its previous mode, or use **Restore changes** to restore all changes tracked by Audio Focus Mixer.
 
-**Before uninstalling:** restore your changes. Android AppOps changes can outlive the app, and uninstalling the app does **not** reliably undo them.
+**Updates:** Install a newer APK signed with the same Release key and a higher `versionCode` over the existing Release to keep app data and settings. Check the release notes and checksum before updating.
 
-**Debug APK warning:** GitHub Actions debug APKs can be signed with different keys on different runs. Updating one debug APK over another may fail; **restore changes before uninstalling or changing builds**. Stable signed releases are a separate step.
+**Before uninstalling:** Use **Restore changes** and confirm the original AppOps modes were restored. Changes to Android AppOps may survive app removal even though the app's restore records do not.
 
-### First fixed-key Release and later updates
-
-The first fixed-key signed beta APK was produced from commit
-`2aadde0426890ab4ae3a9fe9fc788fc856b363bf`, independently checked against
-the release checksum and signing certificate, and tested on Xperia 1 VII (Android 16).
-[Release and key-management documentation](docs/RELEASING.md) explains the
-approval-only signing process.
-
-**v0.2.0 integrity:** APK SHA-256
-`328343ac8db9e32cf042e78a814cc3a8cd56f911da6d731f61a1f66deb982d49`;
-signing certificate SHA-256
-`C3:1F:F8:09:A7:B0:F9:12:1C:CD:6F:96:A5:DF:D4:5D:AD:FE:C8:08:8E:71:25:59:73:33:17:7C:5E:5C:D6:98`.
-Verify your downloaded APK against the `SHA256SUMS` release asset before installing.
-
-**Signed candidate visibility:** in a public repository, GitHub Actions artifacts
-are downloadable by people with repository read access. The owner must explicitly
-approve each candidate workflow dispatch with a confirmation checkbox. An Actions
-candidate is **not** an official GitHub Release; publication requires separate approval.
-If you're moving from an earlier **CI Debug APK** to this fixed-key Release, migrate in this order:
-
-1. Open the existing Audio Focus Mixer and run **Restore changes**.
-2. Confirm the affected apps' actual AppOps modes have been restored. If uncertain,
-   keep the old installation and resolve restoration first; do not reset unknown modes.
-3. Uninstall the old Debug APK (different signing keys may require this).
-4. Install the approved fixed-key Release APK.
-5. Grant Shizuku permission again and reapply desired mixing settings.
-
-Uninstalling loses the app's restore records while system AppOps can remain.
-Subsequent Releases with the same package/signing key and higher versionCode support
-updates in place with app data retained. Check the published APK checksum and
-certificate fingerprint; do not treat a CI Debug APK or candidate as an official release.
+**Using an old CI Debug APK?** Its signing certificate may differ from the signed Release. Before changing installations, restore and verify AppOps, then uninstall the Debug version if required. See the [migration instructions](docs/RELEASING.md#moving-from-debug-to-the-first-fixed-key-release). CI Debug APKs and Actions candidates are **not** official releases.
 
 ## How it works
 
