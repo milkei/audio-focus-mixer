@@ -51,7 +51,7 @@ jobs:
         run: |
           test -n "$ANDROID_HOME"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
-      - uses: gradle/actions/setup-gradle@c8a326d85724fce2ae59a38810306f4a058f26a4 # v6
+      - uses: gradle/actions/setup-gradle@fac0990588f0c68944f5b78252a8247b09a9e108 # v6
         with:
           validate-wrappers: true
           cache-disabled: true
